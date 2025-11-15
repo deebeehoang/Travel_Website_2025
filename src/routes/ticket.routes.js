@@ -1,0 +1,13 @@
+const express = require('express');
+const router = express.Router();
+const TicketController = require('../controllers/ticket.controller');
+const { authenticateToken, isAdmin } = require('../middlewares/auth.middleware');
+
+// Admin-only ticket routes
+router.get('/', authenticateToken, isAdmin, TicketController.getAllTickets);
+router.get('/:id', authenticateToken, isAdmin, TicketController.getTicketById);
+router.delete('/:id', authenticateToken, isAdmin, TicketController.deleteTicket);
+router.put('/:id', authenticateToken, isAdmin, TicketController.updateTicket);
+router.patch('/:id/status', authenticateToken, isAdmin, TicketController.updateTicketStatus);
+
+module.exports = router;

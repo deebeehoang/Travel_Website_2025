@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thêm Tour Du Lịch</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .form-section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+        }
+        #preview-image {
+            max-width: 200px;
+            display: none;
+            margin-top: 10px;
+        }
+        .destination-item {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container my-5">
+        <h2 id="pageTitle">Thêm Tour Du Lịch Mới</h2>
+        
+        <form id="addTourForm">
+            <!-- Thông tin cơ bản -->
+            <div class="form-section">
+                <h4>1. Thông Tin Cơ Bản</h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Mã Tour</label>
+                        <input type="text" class="form-control" name="ma_tour" id="ma_tour" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Tên Tour</label>
+                        <input type="text" class="form-control" name="ten_tour" id="ten_tour" required>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Thời Gian (Số ngày)</label>
+                        <input type="number" class="form-control" name="thoi_gian" id="thoi_gian" min="1" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Tình Trạng</label>
+                        <select class="form-select" name="tinh_trang" id="tinh_trang" required>
+                            <option value="Còn chỗ">Còn Chỗ</option>
+                            <option value="Hết chỗ">Hết Chỗ</option>
+                            <option value="Sắp mở">Sắp Mở</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Loại Tour</label>
+                        <select class="form-select" name="loai_tour" id="loai_tour" required>
+                            <option value="trong_nuoc">Trong Nước</option>
+                            <option value="nuoc_ngoai">Nước Ngoài</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Giá Người Lớn</label>
+                        <input type="number" class="form-control" name="gia_nguoi_lon" id="gia_nguoi_lon" min="0" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Giá Trẻ Em</label>
+                        <input type="number" class="form-control" name="gia_tre_em" id="gia_tre_em" min="0" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Hình Ảnh</label>
+                    <input type="file" class="form-control" name="hinh_anh" accept="image/*">
+                    <img id="preview-image" src="#" alt="Preview">
+                </div>
+            </div>
+
+            <!-- Chọn Điểm Đến -->
+            <div class="form-section">
+                <h4>2. Chọn Điểm Đến</h4>
+                <div id="diadanh-container" class="row">
+                    <!-- Danh sách địa danh sẽ được load bằng JavaScript -->
+                </div>
+            </div>
+
+            <!-- Chọn Lịch Khởi Hành -->
+            <div class="form-section">
+                <h4>3. Chọn Lịch Khởi Hành</h4>
+                <div id="lichkhoihanh-container">
+                    <!-- Danh sách lịch khởi hành sẽ được load bằng JavaScript -->
+                </div>
+            </div>
+
+            <!-- Mô Tả Chi Tiết -->
+            <div class="form-section">
+                <h4>4. Mô Tả Lịch Trình Chi Tiết</h4>
+                <textarea id="mo_ta" name="mo_ta" class="form-control"></textarea>
+            </div>
+
+            <!-- Khuyến mãi theo Tour -->
+            <div class="form-section">
+                <h4>5. Khuyến mãi của Tour</h4>
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label">Mã coupon (Ma_km)</label>
+                        <input type="text" class="form-control" id="promo_ma_km" placeholder="VD: SUMMER10">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">% giảm</label>
+                        <input type="number" class="form-control" id="promo_percent" min="0" max="100" placeholder="10">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Ngày bắt đầu</label>
+                        <input type="date" class="form-control" id="promo_start">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Ngày kết thúc</label>
+                        <input type="date" class="form-control" id="promo_end">
+                    </div>
+                    <div class="col-md-1 d-grid">
+                        <button type="button" class="btn btn-success" id="btnSaveTourPromo">Lưu</button>
+                    </div>
+                </div>
+                <small class="text-muted">Lưu ý: Nhập mã coupon, % và thời gian áp dụng. Hệ thống sẽ tạo/cập nhật coupon và gắn vào tour.</small>
+                <div class="mt-3">
+                    <span class="me-2">Giá người lớn gốc:</span>
+                    <span id="priceBasePreview" class="text-muted"></span>
+                    <br>
+                    <span class="me-2">Giá sau khuyến mãi:</span>
+                    <span id="pricePromoPreview" class="fw-bold text-danger"></span>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='admin.html#tours'">Quay lại</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">Lưu Tour</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal fade" id="addScheduleModal" tabindex="-1" aria-labelledby="addScheduleModalLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addScheduleModalLabel">Tạo lịch khởi hành mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addScheduleForm">
+                        <div class="mb-3">
+                            <label class="form-label" for="schedule_ma_lich">Mã lịch</label>
+                            <input type="text" class="form-control" id="schedule_ma_lich" name="ma_lich" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="schedule_ngay_bat_dau">Ngày bắt đầu</label>
+                            <input type="date" class="form-control" id="schedule_ngay_bat_dau" name="ngay_bat_dau" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="schedule_ngay_ket_thuc">Ngày kết thúc</label>
+                            <input type="date" class="form-control" id="schedule_ngay_ket_thuc" name="ngay_ket_thuc" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="schedule_so_cho">Số chỗ</label>
+                            <input type="number" class="form-control" id="schedule_so_cho" name="so_cho" required min="1">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveSchedule">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+    <script src="/js/admin/admin_addtour.js"></script>
+</body>
+</html>

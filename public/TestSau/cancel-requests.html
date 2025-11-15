@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Yêu Cầu Hủy Tour - VietTravel Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="../css/admin-style.css">
+    <style>
+        .badge.status-pending {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .badge.status-accepted {
+            background-color: #198754;
+        }
+        .badge.status-rejected {
+            background-color: #dc3545;
+        }
+        .table th, .table td {
+            vertical-align: middle;
+        }
+        .action-buttons .btn {
+            margin-right: 5px;
+        }
+        .action-buttons .btn:last-child {
+            margin-right: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div id="sidebar-container"></div>
+            
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Quản Lý Yêu Cầu Hủy Tour</h1>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Danh Sách Yêu Cầu Hủy</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <div id="loading-spinner" class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Đang tải...</span>
+                                </div>
+                                <p class="mt-2">Đang tải danh sách yêu cầu hủy...</p>
+                            </div>
+                            
+                            <table id="cancel-requests-table" class="table table-striped table-hover d-none">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Mã Yêu Cầu</th>
+                                        <th>Khách Hàng</th>
+                                        <th>Tour</th>
+                                        <th>Ngày Yêu Cầu</th>
+                                        <th>Trạng Thái</th>
+                                        <th>Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dữ liệu sẽ được thêm vào bằng JavaScript -->
+                                </tbody>
+                            </table>
+                            
+                            <div id="no-requests" class="text-center py-4 d-none">
+                                <i class="fas fa-search text-muted mb-3" style="font-size: 3rem;"></i>
+                                <h5 class="mb-0">Không có yêu cầu hủy nào</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Modal Chi Tiết Yêu Cầu Hủy -->
+    <div class="modal fade" id="viewRequestModal" tabindex="-1" aria-labelledby="viewRequestModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="viewRequestModalLabel">
+                        <i class="fas fa-info-circle me-2"></i>Chi Tiết Yêu Cầu Hủy
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="request-detail-loading" class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p class="mt-2">Đang tải thông tin chi tiết...</p>
+                    </div>
+                    
+                    <div id="request-details" class="d-none">
+                        <!-- Chi tiết yêu cầu sẽ được thêm vào bằng JavaScript -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Đóng
+                    </button>
+                    <div class="ms-auto action-buttons-detail d-none">
+                        <button type="button" class="btn btn-success accept-btn" data-request-id="">
+                            <i class="fas fa-check me-2"></i>Chấp Nhận
+                        </button>
+                        <button type="button" class="btn btn-danger reject-btn" data-request-id="">
+                            <i class="fas fa-ban me-2"></i>Từ Chối
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Từ Chối Yêu Cầu -->
+    <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="rejectModalLabel">
+                        <i class="fas fa-ban me-2"></i>Từ Chối Yêu Cầu Hủy
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="reject-form">
+                        <input type="hidden" id="reject-request-id">
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Lưu ý:</strong> Nếu từ chối yêu cầu hủy tour, tour sẽ vẫn được giữ nguyên trạng thái hiện tại.
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="reject-reason" class="form-label">Lý do từ chối <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="reject-reason" name="Ly_do_tu_choi" rows="3" required 
+                                placeholder="Nhập lý do từ chối yêu cầu hủy tour..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Hủy
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirm-reject">
+                        <i class="fas fa-ban me-2"></i>Từ Chối Yêu Cầu
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Xác Nhận Chấp Nhận -->
+    <div class="modal fade" id="acceptModal" tabindex="-1" aria-labelledby="acceptModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="acceptModalLabel">
+                        <i class="fas fa-check me-2"></i>Xác Nhận Chấp Nhận
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="accept-request-id">
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Lưu ý:</strong> Nếu chấp nhận yêu cầu hủy tour, tour sẽ được chuyển sang trạng thái HỦY và không thể khôi phục.
+                    </div>
+                    
+                    <p>Bạn có chắc chắn muốn chấp nhận yêu cầu hủy tour này không?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Hủy
+                    </button>
+                    <button type="button" class="btn btn-success" id="confirm-accept">
+                        <i class="fas fa-check me-2"></i>Xác Nhận Chấp Nhận
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/admin-auth.js"></script>
+    <script src="../js/admin-sidebar.js"></script>
+    <script src="../js/admin-cancel-requests.js"></script>
+</body>
+</html> 
