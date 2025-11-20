@@ -508,8 +508,11 @@
 
         // Đợi một chút để đảm bảo user data đã được lưu, sau đó redirect
         setTimeout(() => {
-          if (role === 'Admin') {
+          const userRole = role || JSON.parse(localStorage.getItem('user') || '{}').role;
+          if (userRole === 'Admin') {
             window.location.href = '/admin.html';
+          } else if (userRole === 'Huong_dan_vien') {
+            window.location.href = '/guide.html';
           } else {
             window.location.href = '/';
           }
@@ -581,9 +584,13 @@
           setTimeout(() => {
             console.log('User role:', data.data.user.role);
             console.log('Role comparison:', data.data.user.role === 'Admin');
-            if (data.data.user.role === 'Admin') {
+            const userRole = data.data.user.role || data.data.user.loai_tai_khoan;
+            if (userRole === 'Admin') {
               console.log('Redirecting to admin page');
               window.location.href = '/admin.html';
+            } else if (userRole === 'Huong_dan_vien') {
+              console.log('Redirecting to guide page');
+              window.location.href = '/guide.html';
             } else {
               console.log('Redirecting to home page');
               window.location.href = '/';

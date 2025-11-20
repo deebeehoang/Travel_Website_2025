@@ -638,9 +638,30 @@ static async getAllTours(req, res) {
       });
     } catch (error) {
       console.error('Create schedule error:', error);
-      res.status(500).json({
+      
+      // Kiểm tra các lỗi validation cụ thể
+      let statusCode = 500;
+      let errorMessage = 'Lỗi khi tạo lịch khởi hành';
+      
+      if (error.message.includes('trùng thời gian')) {
+        statusCode = 400;
+        errorMessage = error.message;
+      } else if (error.message.includes('Số chỗ')) {
+        statusCode = 400;
+        errorMessage = error.message;
+      } else if (error.message.includes('Ngày khởi hành')) {
+        statusCode = 400;
+        errorMessage = error.message;
+      } else if (error.message.includes('Hướng dẫn viên')) {
+        statusCode = 400;
+        errorMessage = error.message;
+      } else {
+        errorMessage = error.message || 'Lỗi khi tạo lịch khởi hành';
+      }
+      
+      res.status(statusCode).json({
         status: 'error',
-        message: 'Error creating schedule',
+        message: errorMessage,
         error: error.message
       });
     }
@@ -864,6 +885,17 @@ static async getAllTours(req, res) {
       if (!schedule) {
         return res.status(404).json({ status: 'error', message: 'Schedule not found' });
       }
+      
+      // Debug: log thông tin HDV và rating
+      console.log('📅 Schedule data:', {
+        Ma_lich: schedule.Ma_lich,
+        Ma_huong_dan_vien: schedule.Ma_huong_dan_vien,
+        Ten_huong_dan_vien: schedule.Ten_huong_dan_vien,
+        guide_avg_rating: schedule.guide_avg_rating,
+        guide_rating_count: schedule.guide_rating_count,
+        guide_avatar: schedule.guide_avatar
+      });
+      
       res.status(200).json({ status: 'success', data: { schedule } });
     } catch (error) {
       console.error('Get schedule error:', error);
@@ -876,7 +908,7 @@ static async getAllTours(req, res) {
    */
   static async updateSchedule(req, res) {
     try {
-      const { ngay_bat_dau, ngay_ket_thuc, so_cho } = req.body;
+      const { ngay_bat_dau, ngay_ket_thuc, so_cho, ma_huong_dan_vien } = req.body;
       if (!ngay_bat_dau || !ngay_ket_thuc || so_cho == null) {
         return res.status(400).json({ status: 'error', message: 'Missing required fields' });
       }
@@ -889,14 +921,38 @@ static async getAllTours(req, res) {
       if (tour && tour.Tinh_trang === 'Hủy') {
         return res.status(400).json({ status: 'error', message: 'Cannot update schedule of cancelled tour' });
       }
-      const updated = await Tour.updateSchedule(req.params.lichId, { ngay_bat_dau, ngay_ket_thuc, so_cho });
+      const updateData = { ngay_bat_dau, ngay_ket_thuc, so_cho };
+      // Nếu có ma_huong_dan_vien (có thể là null để gỡ HDV), thêm vào updateData
+      if (ma_huong_dan_vien !== undefined) {
+        updateData.ma_huong_dan_vien = ma_huong_dan_vien || null;
+      }
+      const updated = await Tour.updateSchedule(req.params.lichId, updateData);
       res.status(200).json({ status: 'success', data: { schedule: updated } });
     } catch (error) {
       console.error('Update schedule error:', error);
+      
+      // Kiểm tra các lỗi validation cụ thể
+      let statusCode = 500;
+      let errorMessage = 'Lỗi khi cập nhật lịch khởi hành';
+      
       if (error.message.includes('Số chỗ mới nhỏ hơn')) {
-        return res.status(400).json({ status: 'error', message: error.message });
+        statusCode = 400;
+        errorMessage = error.message;
+      } else if (error.message.includes('trùng thời gian')) {
+        statusCode = 400;
+        errorMessage = error.message;
+      } else if (error.message.includes('Hướng dẫn viên')) {
+        statusCode = 400;
+        errorMessage = error.message;
+      } else {
+        errorMessage = error.message || 'Lỗi khi cập nhật lịch khởi hành';
       }
-      res.status(500).json({ status: 'error', message: 'Error updating schedule', error: error.message });
+      
+      res.status(statusCode).json({ 
+        status: 'error', 
+        message: errorMessage,
+        error: error.message 
+      });
     }
   }
 

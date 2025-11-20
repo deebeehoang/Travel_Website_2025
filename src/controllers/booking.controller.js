@@ -796,6 +796,33 @@ class BookingController {
               console.log('📢 [NOTIFICATION] Đã gửi thông báo booking mới (broadcast):', notificationData);
             }
           }
+          
+          // Emit socket event cho hướng dẫn viên nếu có
+          try {
+            const guideSockets = req.app.get('guideSockets') || {};
+            
+            // Lấy Ma_huong_dan_vien từ lịch khởi hành
+            const [scheduleInfo] = await connection.query(
+              'SELECT Ma_huong_dan_vien FROM lich_khoi_hanh WHERE Ma_lich = ?',
+              [ma_lich_khoi_hanh]
+            );
+            
+            if (scheduleInfo.length > 0 && scheduleInfo[0].Ma_huong_dan_vien) {
+              const guideId = scheduleInfo[0].Ma_huong_dan_vien;
+              const guideSocket = guideSockets[guideId];
+              
+              if (guideSocket && guideSocket.connected) {
+                guideSocket.emit('new_booking', {
+                  ...notificationData,
+                  ma_lich: ma_lich_khoi_hanh,
+                  ma_huong_dan_vien: guideId
+                });
+                console.log(`✅ [NOTIFICATION] Đã gửi thông báo booking mới đến hướng dẫn viên ${guideId}`);
+              }
+            }
+          } catch (error) {
+            console.error('❌ Lỗi khi gửi thông báo booking cho guide:', error);
+          }
         } catch (error) {
           console.error('❌ Lỗi khi gửi thông báo booking:', error);
           // Không throw error để không làm gián đoạn response

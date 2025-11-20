@@ -178,8 +178,45 @@ const isCustomer = (req, res, next) => {
   }
 };
 
+/**
+ * Middleware kiểm tra quyền hướng dẫn viên
+ */
+const isGuide = (req, res, next) => {
+  console.log('🔒 Kiểm tra quyền Hướng dẫn viên');
+  
+  if (req.user && req.user.role === 'Huong_dan_vien') {
+    console.log('✅ Xác thực quyền Hướng dẫn viên thành công');
+    next();
+  } else {
+    console.log('❌ Không có quyền Hướng dẫn viên');
+    return res.status(403).json({
+      status: 'error',
+      message: 'Không có quyền truy cập'
+    });
+  }
+};
+
+/**
+ * Helper function để xác định redirect URL sau khi login
+ * @param {string} role - Role của user
+ * @returns {string} - Redirect URL
+ */
+const getRedirectUrl = (role) => {
+  switch (role) {
+    case 'Admin':
+      return '/admin.html';
+    case 'Huong_dan_vien':
+      return '/guide.html';
+    case 'Khach_hang':
+    default:
+      return '/index.html';
+  }
+};
+
 module.exports = {
   authenticateToken,
   isAdmin,
-  isCustomer
+  isCustomer,
+  isGuide,
+  getRedirectUrl
 };

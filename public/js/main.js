@@ -36,6 +36,9 @@ document.addEventListener('DOMContentLoaded', function() {
     updateRatingsSectionVisibility();
     initializeStarRatings();
     
+    // Check for payment success parameter and show notification
+    checkPaymentSuccess();
+    
     // Listen for storage changes (login/logout from other tabs)
     window.addEventListener('storage', function(e) {
         if (e.key === 'token' || e.key === 'user') {
@@ -52,6 +55,68 @@ document.addEventListener('DOMContentLoaded', function() {
         updateRatingsSectionVisibility();
     });
 });
+
+// Check for payment success and show notification
+function checkPaymentSuccess() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const payment = urlParams.get('payment');
+    const bookingId = urlParams.get('bookingId');
+    const method = urlParams.get('method');
+    
+    if (payment === 'success') {
+        // Remove query parameters from URL
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+        
+        // Show success notification using Bootstrap toast
+        showPaymentSuccessToast(bookingId, method);
+    }
+}
+
+// Show payment success toast notification
+function showPaymentSuccessToast(bookingId, method) {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast element
+    const toastId = 'payment-success-toast-' + Date.now();
+    const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Thanh toán thành công!</strong>
+                    ${bookingId ? `<br><small>Mã booking: ${bookingId}</small>` : ''}
+                    ${method ? `<br><small>Phương thức: ${method}</small>` : ''}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    // Initialize and show toast
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: 5000 // Show for 5 seconds
+    });
+    
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+    });
+}
 
 // Load user ratings
 async function loadUserRatings() {

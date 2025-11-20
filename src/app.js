@@ -39,11 +39,13 @@ const db = require('./config/database');
 
 let adminSockets = {}; // { adminId: socket }
 let onlineUsers = {}; // Đối tượng để lưu trữ socket của khách hàng: { userId1: socket1, userId2: socket2 }
+let guideSockets = {}; // { guideId: socket } - Lưu socket của hướng dẫn viên
 
 // Expose io và onlineUsers để controller có thể truy cập
 app.set('io', io);
 app.set('onlineUsers', onlineUsers);
 app.set('adminSockets', adminSockets);
+app.set('guideSockets', guideSockets);
 
 io.on("connection", (socket) => {
   console.log("🔌 Một người dùng đã kết nối:", socket.id);
@@ -85,6 +87,21 @@ io.on("connection", (socket) => {
       const firstAdminId = Object.keys(adminSockets)[0];
       socket.emit("adminOnline", firstAdminId);
     }
+  });
+
+  // Lắng nghe sự kiện khi Hướng dẫn viên online
+  socket.on("guideOnline", async (data) => {
+    const { userId, guideId } = data;
+    if (!userId || !guideId) {
+      console.log('⚠️ Guide online event thiếu userId hoặc guideId');
+      return;
+    }
+    console.log(`🎯 Hướng dẫn viên '${guideId}' (${userId}) đã online:`, socket.id);
+    guideSockets[guideId] = socket;
+    socket.guideId = guideId;
+    socket.userId = userId;
+    
+    console.log(`📊 Tổng số hướng dẫn viên đang online: ${Object.keys(guideSockets).length}`);
   });
 
   // Lắng nghe sự kiện gửi tin nhắn (dùng chung cho cả admin và khách)
@@ -206,7 +223,13 @@ io.on("connection", (socket) => {
         userSocket.emit("adminOffline");
       });
     }
-    // 2. Nếu người ngắt kết nối là Khách hàng
+    // 2. Nếu người ngắt kết nối là Hướng dẫn viên
+    else if (socket.guideId && guideSockets[socket.guideId]) {
+      console.log(`🎯 Hướng dẫn viên '${socket.guideId}' đã offline.`);
+      delete guideSockets[socket.guideId];
+      console.log(`📊 Còn lại ${Object.keys(guideSockets).length} hướng dẫn viên online`);
+    }
+    // 3. Nếu người ngắt kết nối là Khách hàng
     else if (socket.userId && onlineUsers[socket.userId]) {
       console.log(`👤 Khách hàng '${socket.userId}' đã offline.`);
       delete onlineUsers[socket.userId]; // Xóa khách hàng khỏi danh sách online
@@ -395,6 +418,9 @@ const chatRoutes = require('./routes/chat');
 const promotionRoutes = require('./routes/promotion.routes');
 const ratingRoutes = require('./routes/rating.routes');
 const momoRoutes = require('./routes/momo.routes');
+const guideRoutes = require('./routes/guide.routes');
+const adminGuideRoutes = require('./routes/admin-guide.routes');
+const tourItineraryRoutes = require('./routes/tourItinerary.routes');
 
 // ==============================================
 // UPLOAD ROUTE
@@ -496,7 +522,12 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/promotions', promotionRoutes);
 app.use('/api/ratings', ratingRoutes);
 app.use('/api/payment/momo', momoRoutes);
+// Public route for MoMo redirect (without /api prefix)
+app.use('/payment/momo', momoRoutes);
 app.use('/api/ai', require('./routes/ai.routes'));
+app.use('/api/guide', guideRoutes);
+app.use('/api/admin', adminGuideRoutes);
+app.use('/api', tourItineraryRoutes);
 
 // ==============================================
 // CONTENT-TYPE MIDDLEWARE

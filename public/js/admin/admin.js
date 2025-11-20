@@ -81,6 +81,7 @@ function setupTabNavigation() {
         'navTickets': { section: 'ticketsSection', title: 'Quản lý Vé', loader: loadTickets },
         'navBookings': { section: 'bookingsSection', title: 'Quản lý Booking', loader: loadBookingsTab },
         'navSchedules': { section: 'schedulesSection', title: 'Quản lý Lịch khởi hành', loader: loadSchedulesTab },
+        'navGuides': { section: 'guidesSection', title: 'Quản lý Hướng dẫn viên', loader: loadGuidesTab },
         'navUsers': {
             section: 'usersSection',
             title: 'Quản lý người dùng',
@@ -509,6 +510,9 @@ async function refreshTourList() {
                 <td>${CONFIG.formatCurrency(tour.Gia_tre_em)}</td>
                 <td>${hinhAnhHTML}</td>
                 <td>
+                    <button class="btn btn-sm btn-success me-1" onclick="manageItinerary('${tour.Ma_tour}', '${tour.Ten_tour}', ${tour.Thoi_gian})" title="Quản lý Lịch trình">
+                        <i class="fas fa-route"></i>
+                    </button>
                     <button class="btn btn-sm btn-info me-1" onclick="editTour('${tour.Ma_tour}')">
                         <i class="fas fa-edit"></i>
                     </button>
@@ -2815,8 +2819,11 @@ async function uploadImageLocal(file, type) {
 }
 
 // **************** Schedule management ****************
+// Global variables for schedule management
+let allSchedules = [];
+let filteredSchedules = [];
+
 // Loader for schedules tab
-// Sửa hàm loadSchedulesTab
 function loadSchedulesTab() {
     console.log('Đang tải tab quản lý Lịch khởi hành');
     
@@ -2831,7 +2838,9 @@ function loadSchedulesTab() {
     
     // Kiểm tra xem nội dung đã được tạo chưa
     const schedulesSection = document.getElementById('schedulesSection');
-    if (schedulesSection && !schedulesSection.querySelector('.table')) {
+    const hasTable = schedulesSection && schedulesSection.querySelector('.table');
+    
+    if (schedulesSection && !hasTable) {
         // Nếu chưa có nội dung, tạo mới
         schedulesSection.innerHTML = `
             <div class="row mb-3">
@@ -2879,7 +2888,7 @@ function loadSchedulesTab() {
                 <table class="table table-striped table-hover">
                     <thead class="table-dark">
                         <tr>
-                            <th>Mã Lịch</th><th>Mã Tour</th><th>Ngày BD</th><th>Ngày KT</th><th>Số chỗ</th><th>Đã đặt</th><th>Tour Status</th><th>Thao tác</th>
+                            <th>Mã Lịch</th><th>Mã Tour</th><th>Ngày BD</th><th>Ngày KT</th><th>Số chỗ</th><th>Đã đặt</th><th>Hướng dẫn viên</th><th>Tour Status</th><th>Thao tác</th>
                         </tr>
                     </thead>
                     <tbody id="schedulesList">
@@ -2904,18 +2913,89 @@ function loadSchedulesTab() {
         if (scheduleForm) {
             scheduleForm.addEventListener('submit', saveSchedule);
         }
+        
+        // Add event listeners for date changes to load guides
+        const scheduleStart = document.getElementById('scheduleStart');
+        const scheduleEnd = document.getElementById('scheduleEnd');
+        if (scheduleStart) {
+            scheduleStart.addEventListener('change', () => {
+                validateScheduleDates();
+                loadAvailableGuidesForSchedule();
+            });
+        }
+        if (scheduleEnd) {
+            scheduleEnd.addEventListener('change', () => {
+                validateScheduleDates();
+                loadAvailableGuidesForSchedule();
+            });
+        }
+    }
+    
+    // Đăng ký event listeners cho filter/search (luôn đăng ký, kể cả khi HTML đã có sẵn)
+    const statusFilter = document.getElementById('scheduleStatusFilter');
+    const dateFrom = document.getElementById('scheduleDateFrom');
+    const dateTo = document.getElementById('scheduleDateTo');
+    const searchInput = document.getElementById('scheduleSearchInput');
+    
+    // Đăng ký event listeners (sử dụng once: false để có thể gọi lại)
+    if (statusFilter) {
+        // Remove old listener và thêm mới
+        statusFilter.onchange = null;
+        statusFilter.addEventListener('change', function() {
+            console.log('Status filter changed to:', this.value);
+            applyScheduleFilters();
+        });
+    }
+    if (dateFrom) {
+        dateFrom.onchange = null;
+        dateFrom.addEventListener('change', function() {
+            console.log('Date from changed to:', this.value);
+            applyScheduleFilters();
+        });
+    }
+    if (dateTo) {
+        dateTo.onchange = null;
+        dateTo.addEventListener('change', function() {
+            console.log('Date to changed to:', this.value);
+            applyScheduleFilters();
+        });
+    }
+    if (searchInput) {
+        searchInput.oninput = null;
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            console.log('Search input changed to:', this.value);
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                applyScheduleFilters();
+            }, 300);
+        });
     }
     
     // Tải danh sách lịch khởi hành
-    loadSchedules();
+    // Delay nhỏ để đảm bảo DOM đã sẵn sàng
+    setTimeout(() => {
+        loadSchedules();
+    }, 100);
 }
 
 // Fetch and render schedules
 async function loadSchedules() {
     const schedulesList = document.getElementById('schedulesList');
-    if (!schedulesList) return;
+    if (!schedulesList) {
+        console.warn('schedulesList element not found');
+        return;
+    }
+    
     const token = localStorage.getItem('token');
+    if (!token) {
+        console.error('No token found');
+        schedulesList.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Vui lòng đăng nhập lại</td></tr>';
+        return;
+    }
+    
     try {
+        console.log('Loading schedules...');
         const response = await fetch('http://localhost:5000/api/tours/schedules', {
             method: 'GET',
             headers: {
@@ -2924,31 +3004,220 @@ async function loadSchedules() {
             },
             mode: 'cors'
         });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
         const data = await response.json();
+        console.log('Schedules API response:', data);
+        
         let arr = [];
-        if (data.status === 'success' && Array.isArray(data.data.schedules)) arr = data.data.schedules;
-        renderSchedules(arr);
+        if (data.status === 'success') {
+            if (Array.isArray(data.data?.schedules)) {
+                arr = data.data.schedules;
+            } else if (Array.isArray(data.data)) {
+                arr = data.data;
+            } else if (Array.isArray(data.schedules)) {
+                arr = data.schedules;
+            }
+        }
+        
+        console.log(`Loaded ${arr.length} schedules`);
+        allSchedules = arr;
+        
+        // Render immediately if no filters are set, otherwise apply filters
+        const hasActiveFilters = document.getElementById('scheduleStatusFilter')?.value !== 'all' ||
+                                 document.getElementById('scheduleDateFrom')?.value ||
+                                 document.getElementById('scheduleDateTo')?.value ||
+                                 document.getElementById('scheduleSearchInput')?.value;
+        
+        if (hasActiveFilters) {
+            applyScheduleFilters();
+        } else {
+            renderSchedules(arr);
+        }
     } catch (error) {
         console.error('Error loading schedules:', error);
-        showAlert('danger', 'Không thể tải danh sách lịch');
+        const schedulesList = document.getElementById('schedulesList');
+        if (schedulesList) {
+            schedulesList.innerHTML = `<tr><td colspan="10" class="text-center text-danger">Lỗi: ${error.message}</td></tr>`;
+        }
+        showAlert('danger', 'Không thể tải danh sách lịch: ' + error.message);
     }
 }
 
+// Apply filters to schedules
+function applyScheduleFilters() {
+    if (!allSchedules || allSchedules.length === 0) {
+        console.warn('No schedules to filter');
+        const tbody = document.getElementById('schedulesList');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center">Chưa có dữ liệu lịch khởi hành</td></tr>';
+        }
+        return;
+    }
+    
+    let filtered = [...allSchedules];
+    console.log(`Applying filters to ${filtered.length} schedules`);
+    
+    // Filter by status
+    const statusFilter = document.getElementById('scheduleStatusFilter')?.value || 'all';
+    if (statusFilter !== 'all') {
+        const beforeCount = filtered.length;
+        filtered = filtered.filter(s => {
+            // So sánh không phân biệt hoa thường và loại bỏ khoảng trắng
+            const scheduleStatus = (s.tourStatus || '').trim();
+            const filterStatus = statusFilter.trim();
+            return scheduleStatus === filterStatus;
+        });
+        console.log(`Status filter (${statusFilter}): ${beforeCount} -> ${filtered.length}`);
+        console.log('Sample tourStatus values:', filtered.slice(0, 3).map(s => s.tourStatus));
+    }
+    
+    // Filter by date range
+    const dateFrom = document.getElementById('scheduleDateFrom')?.value;
+    const dateTo = document.getElementById('scheduleDateTo')?.value;
+    if (dateFrom) {
+        const beforeCount = filtered.length;
+        filtered = filtered.filter(s => {
+            const scheduleDate = s.Ngay_bat_dau ? s.Ngay_bat_dau.split('T')[0] : s.Ngay_bat_dau;
+            return scheduleDate >= dateFrom;
+        });
+        console.log(`Date from filter: ${beforeCount} -> ${filtered.length}`);
+    }
+    if (dateTo) {
+        const beforeCount = filtered.length;
+        filtered = filtered.filter(s => {
+            const scheduleDate = s.Ngay_ket_thuc ? s.Ngay_ket_thuc.split('T')[0] : s.Ngay_ket_thuc;
+            return scheduleDate <= dateTo;
+        });
+        console.log(`Date to filter: ${beforeCount} -> ${filtered.length}`);
+    }
+    
+    // Filter by search
+    const search = document.getElementById('scheduleSearchInput')?.value?.toLowerCase() || '';
+    if (search) {
+        const beforeCount = filtered.length;
+        filtered = filtered.filter(s => {
+            const maLich = (s.Ma_lich || '').toLowerCase();
+            const maTour = (s.Ma_tour || '').toLowerCase();
+            const tenTour = (s.Ten_tour || '').toLowerCase();
+            return maLich.includes(search) || maTour.includes(search) || tenTour.includes(search);
+        });
+        console.log(`Search filter: ${beforeCount} -> ${filtered.length}`);
+    }
+    
+    filteredSchedules = filtered;
+    console.log(`Final filtered count: ${filtered.length}`);
+    renderSchedules(filtered);
+}
+
 // Render schedule rows
-function renderSchedules(schedules) {
+async function renderSchedules(schedules) {
     const tbody = document.getElementById('schedulesList');
-    tbody.innerHTML = '';
-    schedules.forEach(s => {
+    if (!tbody) {
+        console.error('schedulesList tbody not found');
+        return;
+    }
+    
+    console.log(`Rendering ${schedules.length} schedules`);
+    
+    if (!schedules || schedules.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center">Không có lịch khởi hành nào</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = '<tr><td colspan="10" class="text-center">Đang tải...</td></tr>';
+    
+    // Load available guides for each schedule
+    const token = localStorage.getItem('token');
+    
+    for (const s of schedules) {
         const tr = document.createElement('tr');
+        
+        // Format dates
+        const dateFrom = s.Ngay_bat_dau ? s.Ngay_bat_dau.split('T')[0] : s.Ngay_bat_dau;
+        const dateTo = s.Ngay_ket_thuc ? s.Ngay_ket_thuc.split('T')[0] : s.Ngay_ket_thuc;
+        const formattedStart = dateFrom ? new Date(dateFrom).toLocaleDateString('vi-VN') : s.Ngay_bat_dau;
+        const formattedEnd = dateTo ? new Date(dateTo).toLocaleDateString('vi-VN') : s.Ngay_ket_thuc;
+        
+        // Calculate remaining seats
+        const bookedSeats = s.bookedSeats || 0;
+        const remainingSeats = Math.max(0, (s.So_cho || 0) - bookedSeats);
+        
+        // Check if schedule is in the past (Đã diễn ra)
+        const isPastSchedule = s.tourStatus === 'Đã diễn ra' || 
+                               (dateTo && new Date(dateTo) < new Date());
+        
+        // Load available guides for this schedule's date range (only if not past)
+        let guideDropdown = '';
+        if (isPastSchedule) {
+            // Disable dropdown for past schedules
+            guideDropdown = '<select class="form-select form-select-sm" disabled title="Không thể thay đổi HDV cho lịch đã diễn ra">';
+            guideDropdown += '<option value="">-- Lịch đã diễn ra --</option>';
+            guideDropdown += '</select>';
+        } else {
+            // Tạo dropdown với style để đảm bảo có thể click được
+            guideDropdown = '<select class="form-select form-select-sm" id="guideSelect_' + s.Ma_lich + '" style="min-width: 180px; z-index: 1000; position: relative; pointer-events: auto;" onchange="assignGuideToSchedule(\'' + s.Ma_lich + '\', this.value, \'' + dateFrom + '\', \'' + dateTo + '\')">';
+            // Luôn hiển thị option "Gỡ HDV" với style nổi bật, selected nếu chưa có HDV
+            const noGuideSelected = !s.Ma_huong_dan_vien || s.Ma_huong_dan_vien === '';
+            guideDropdown += `<option value="" ${noGuideSelected ? 'selected' : ''} style="color: #dc3545; font-weight: bold;">❌ Gỡ HDV</option>`;
+            
+            try {
+                // Thêm ma_tour vào query để kiểm tra trùng tour
+                let availableGuidesUrl = `http://localhost:5000/api/admin/guides/available?date_from=${dateFrom}&date_to=${dateTo}&exclude_schedule=${s.Ma_lich}`;
+                if (s.Ma_tour) {
+                    availableGuidesUrl += `&ma_tour=${encodeURIComponent(s.Ma_tour)}`;
+                }
+                
+                const availableGuidesRes = await fetch(availableGuidesUrl, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (availableGuidesRes.ok) {
+                    const guidesData = await availableGuidesRes.json();
+                    if (guidesData.status === 'success' && guidesData.data.guides) {
+                        guidesData.data.guides.forEach(guide => {
+                            const selected = s.Ma_huong_dan_vien === guide.Ma_huong_dan_vien ? 'selected' : '';
+                            guideDropdown += `<option value="${guide.Ma_huong_dan_vien}" ${selected}>👤 ${guide.Ten_huong_dan_vien} (${guide.So_dien_thoai})</option>`;
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error('Error loading available guides:', err);
+            }
+            
+            guideDropdown += '</select>';
+        }
+        
+        const currentGuideName = s.Ten_huong_dan_vien || 'Chưa phân công';
+        const tourName = s.Ten_tour || s.Ma_tour;
+        const hasGuide = s.Ma_huong_dan_vien && s.Ma_huong_dan_vien !== '';
+        
         tr.innerHTML = `
-            <td>${s.Ma_lich}</td>
-            <td>${s.Ma_tour}</td>
-            <td>${s.Ngay_bat_dau}</td>
-            <td>${s.Ngay_ket_thuc}</td>
-            <td>${s.So_cho}</td>
-            <td>${s.bookedSeats || 0}</td>
-            <td>${s.tourStatus}</td>
+            <td><strong>${s.Ma_lich}</strong></td>
+            <td>
+                <div>
+                    <strong>${tourName}</strong><br>
+                    <small class="text-muted">${s.Ma_tour}</small>
+                </div>
+            </td>
+            <td>${formattedStart}</td>
+            <td>${formattedEnd}</td>
+            <td>${s.So_cho || 0}</td>
+            <td><span class="badge bg-secondary">${bookedSeats}</span></td>
+            <td><span class="badge ${remainingSeats > 0 ? 'bg-success' : 'bg-danger'}">${remainingSeats}</span></td>
+            <td>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="badge ${hasGuide ? 'bg-info' : 'bg-secondary'}">${currentGuideName}</span>
+                    ${guideDropdown}
+                    ${hasGuide && !isPastSchedule ? `<button class="btn btn-sm btn-outline-danger" onclick="removeGuideFromSchedule('${s.Ma_lich}', '${dateFrom}', '${dateTo}')" title="Gỡ HDV" style="white-space: nowrap;">
+                        <i class="fas fa-times"></i> Gỡ
+                    </button>` : ''}
+                </div>
+            </td>
+            <td>${getScheduleStatusBadge(s.tourStatus)}</td>
             <td>
                 <div class="btn-group">
                     <button class="btn btn-sm btn-primary" onclick="editSchedule('${s.Ma_lich}')">
@@ -2961,18 +3230,52 @@ function renderSchedules(schedules) {
             </td>
         `;
         tbody.appendChild(tr);
-    });
+    }
 }
 
 // Show add schedule form
-function showAddScheduleForm() {
+async function showAddScheduleForm() {
     isEditScheduleMode = false;
     currentScheduleId = null;
     const form = document.getElementById('scheduleForm');
+    if (!form) return;
+    
     form.reset();
-    document.getElementById('scheduleId').disabled = false;
+    
+    // Auto-generate schedule ID
+    const scheduleIdInput = document.getElementById('scheduleId');
+    if (scheduleIdInput) {
+        const timestamp = Date.now();
+        scheduleIdInput.value = `LKH${timestamp}`;
+        scheduleIdInput.readOnly = true;
+    }
+    
+    // Load tours dropdown
+    await loadToursForSchedule();
+    
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    const startInput = document.getElementById('scheduleStart');
+    const endInput = document.getElementById('scheduleEnd');
+    if (startInput) startInput.min = today;
+    if (endInput) endInput.min = today;
+    
+    // Clear guide dropdown - thêm option "Gỡ HDV"
+    const guideSelect = document.getElementById('scheduleGuide');
+    const removeGuideBtn = document.getElementById('removeGuideBtn');
+    if (guideSelect) {
+        guideSelect.innerHTML = '<option value="" selected style="color: #dc3545; font-weight: bold;">❌ Gỡ HDV</option>';
+    }
+    // Ẩn nút "Gỡ HDV" khi thêm mới
+    if (removeGuideBtn) {
+        removeGuideBtn.style.display = 'none';
+    }
+    
     document.getElementById('scheduleFormTitle').textContent = 'Thêm Lịch khởi hành';
     document.getElementById('scheduleFormContainer').style.display = 'block';
+    
+    // Scroll to form
+    document.getElementById('scheduleFormContainer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // Hide schedule form
@@ -2983,13 +3286,45 @@ function hideScheduleForm() {
 // Save or update schedule
 async function saveSchedule(e) {
     e.preventDefault();
+    
+    // Validate dates
+    if (!validateScheduleDates()) {
+        return;
+    }
+    
     const id = document.getElementById('scheduleId').value;
     const tourId = document.getElementById('scheduleTourId').value;
     const seats = parseInt(document.getElementById('scheduleSeats').value, 10);
     const start = document.getElementById('scheduleStart').value;
     const end = document.getElementById('scheduleEnd').value;
+    const guideId = document.getElementById('scheduleGuide')?.value || null;
+    
+    if (!tourId || !seats || !start || !end) {
+        showAlert('danger', 'Vui lòng điền đầy đủ thông tin');
+        return;
+    }
+    
+    if (seats < 1) {
+        showAlert('danger', 'Số chỗ phải lớn hơn 0');
+        return;
+    }
+    
     const token = localStorage.getItem('token');
-    const payload = { ma_lich: id, ma_tour: tourId, so_cho: seats, ngay_bat_dau: start, ngay_ket_thuc: end };
+    const payload = { 
+        ma_lich: id, 
+        ma_tour: tourId, 
+        so_cho: seats, 
+        ngay_bat_dau: start, 
+        ngay_ket_thuc: end
+    };
+    
+    // Nếu guideId là empty string hoặc null, gửi null để gỡ HDV
+    if (guideId && guideId !== '') {
+        payload.ma_huong_dan_vien = guideId;
+    } else {
+        payload.ma_huong_dan_vien = null; // Gỡ HDV
+    }
+    
     try {
         let url = 'http://localhost:5000/api/tours/schedules';
         let method = 'POST';
@@ -2998,18 +3333,172 @@ async function saveSchedule(e) {
             method = 'PUT';
         }
         const res = await fetch(url, {
-            method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload)
+            method, 
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
+            body: JSON.stringify(payload)
         });
         if (!res.ok) {
-            const text = await res.text();
-            showAlert('danger', `Lỗi ${res.status}: ${text}`);
+            let errorData;
+            try {
+                errorData = await res.json();
+            } catch (e) {
+                const errorText = await res.text();
+                errorData = { message: errorText };
+            }
+            
+            // Hiển thị thông báo lỗi chi tiết
+            const errorMessage = errorData.message || errorData.error || `Lỗi ${res.status}: Không thể ${isEditScheduleMode ? 'cập nhật' : 'tạo'} lịch khởi hành`;
+            showAlert('danger', errorMessage);
+            
+            // Log để debug
+            console.error('Schedule save error:', errorData);
             return;
         }
         showAlert('success', isEditScheduleMode ? 'Cập nhật thành công' : 'Thêm lịch thành công');
-        hideScheduleForm(); loadSchedules();
+        hideScheduleForm(); 
+        loadSchedules();
     } catch (err) {
         console.error('Save schedule error:', err);
-        showAlert('danger', 'Lỗi khi lưu lịch');
+        showAlert('danger', 'Lỗi khi lưu lịch: ' + err.message);
+    }
+}
+
+// Validate schedule dates
+function validateScheduleDates() {
+    const start = document.getElementById('scheduleStart')?.value;
+    const end = document.getElementById('scheduleEnd')?.value;
+    const errorDiv = document.getElementById('scheduleDateError');
+    const startInput = document.getElementById('scheduleStart');
+    const endInput = document.getElementById('scheduleEnd');
+    
+    if (start && end && new Date(start) >= new Date(end)) {
+        if (startInput) startInput.classList.add('is-invalid');
+        if (endInput) endInput.classList.add('is-invalid');
+        if (errorDiv) errorDiv.style.display = 'block';
+        return false;
+    } else {
+        if (startInput) startInput.classList.remove('is-invalid');
+        if (endInput) endInput.classList.remove('is-invalid');
+        if (errorDiv) errorDiv.style.display = 'none';
+        return true;
+    }
+}
+
+// Load tours for schedule dropdown
+async function loadToursForSchedule() {
+    const tourSelect = document.getElementById('scheduleTourId');
+    if (!tourSelect) return;
+    
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/api/tours', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load tours');
+        
+        const data = await response.json();
+        const tours = data.data?.tours || data.tours || [];
+        
+        tourSelect.innerHTML = '<option value="">-- Chọn Tour --</option>';
+        tours.forEach(tour => {
+            if (tour.Tinh_trang !== 'Hủy') {
+                const option = document.createElement('option');
+                option.value = tour.Ma_tour;
+                option.textContent = `${tour.Ten_tour} (${tour.Ma_tour})`;
+                option.dataset.tourName = tour.Ten_tour;
+                tourSelect.appendChild(option);
+            }
+        });
+        
+        // Add change event to show tour info and reload guides
+        tourSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const tourInfo = document.getElementById('tourInfo');
+            if (tourInfo && selectedOption.value) {
+                tourInfo.textContent = `Tour: ${selectedOption.dataset.tourName || selectedOption.textContent}`;
+            } else if (tourInfo) {
+                tourInfo.textContent = '';
+            }
+            
+            // Reload available guides khi tour thay đổi (để kiểm tra trùng tour)
+            const start = document.getElementById('scheduleStart')?.value;
+            const end = document.getElementById('scheduleEnd')?.value;
+            if (start && end) {
+                loadAvailableGuidesForSchedule();
+            }
+        });
+    } catch (error) {
+        console.error('Error loading tours:', error);
+        showAlert('warning', 'Không thể tải danh sách tour');
+    }
+}
+
+// Load available guides when dates are selected
+async function loadAvailableGuidesForSchedule() {
+    const start = document.getElementById('scheduleStart')?.value;
+    const end = document.getElementById('scheduleEnd')?.value;
+    const tourId = document.getElementById('scheduleTourId')?.value;
+    const guideSelect = document.getElementById('scheduleGuide');
+    const guideInfo = document.getElementById('guideInfo');
+    
+    if (!start || !end || !guideSelect) return;
+    
+    if (!validateScheduleDates()) {
+        guideSelect.innerHTML = '<option value="">-- Chọn ngày hợp lệ --</option>';
+        if (guideInfo) guideInfo.textContent = 'Ngày không hợp lệ';
+        return;
+    }
+    
+    try {
+        const token = localStorage.getItem('token');
+        // Thêm ma_tour vào query params nếu có (để kiểm tra trùng tour)
+        let url = `http://localhost:5000/api/admin/guides/available?date_from=${start}&date_to=${end}`;
+        if (tourId) {
+            url += `&ma_tour=${encodeURIComponent(tourId)}`;
+        }
+        // Nếu đang edit, thêm exclude_schedule
+        if (isEditScheduleMode && currentScheduleId) {
+            url += `&exclude_schedule=${encodeURIComponent(currentScheduleId)}`;
+        }
+        
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load guides');
+        
+        const data = await response.json();
+        const guides = data.data?.guides || [];
+        
+        // Luôn có option "Gỡ HDV" ở đầu với style nổi bật
+        const removeOption = document.createElement('option');
+        removeOption.value = '';
+        removeOption.textContent = '❌ Gỡ HDV';
+        removeOption.style.color = '#dc3545';
+        removeOption.style.fontWeight = 'bold';
+        guideSelect.innerHTML = '';
+        guideSelect.appendChild(removeOption);
+        
+        guides.forEach(guide => {
+            const option = document.createElement('option');
+            option.value = guide.Ma_huong_dan_vien;
+            option.textContent = `👤 ${guide.Ten_huong_dan_vien} (${guide.So_dien_thoai})`;
+            guideSelect.appendChild(option);
+        });
+        
+        if (guideInfo) {
+            guideInfo.textContent = guides.length > 0 
+                ? `Có ${guides.length} hướng dẫn viên rảnh trong khoảng thời gian này`
+                : 'Không có hướng dẫn viên rảnh trong khoảng thời gian này';
+        }
+    } catch (error) {
+        console.error('Error loading available guides:', error);
+        guideSelect.innerHTML = '<option value="">-- Lỗi tải HDV --</option>';
+        if (guideInfo) guideInfo.textContent = 'Không thể tải danh sách HDV';
     }
 }
 
@@ -3017,20 +3506,84 @@ async function saveSchedule(e) {
 async function editSchedule(lichId) {
     const token = localStorage.getItem('token');
     try {
-        const res = await fetch(`http://localhost:5000/api/tours/schedules/${lichId}`, { method: 'GET', headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch(`http://localhost:5000/api/tours/schedules/${lichId}`, { 
+            method: 'GET', 
+            headers: { 'Authorization': `Bearer ${token}` } 
+        });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         const s = data.data.schedule;
+        
+        // Load tours first
+        await loadToursForSchedule();
+        
+        // Fill form
         document.getElementById('scheduleId').value = s.Ma_lich;
-        document.getElementById('scheduleId').disabled = true;
+        document.getElementById('scheduleId').readOnly = true;
         document.getElementById('scheduleTourId').value = s.Ma_tour;
         document.getElementById('scheduleSeats').value = s.So_cho;
-        document.getElementById('scheduleStart').value = s.Ngay_bat_dau;
-        document.getElementById('scheduleEnd').value = s.Ngay_ket_thuc;
-        isEditScheduleMode = true; currentScheduleId = lichId;
+        
+        // Format dates for input
+        const startDate = s.Ngay_bat_dau ? s.Ngay_bat_dau.split('T')[0] : s.Ngay_bat_dau;
+        const endDate = s.Ngay_ket_thuc ? s.Ngay_ket_thuc.split('T')[0] : s.Ngay_ket_thuc;
+        document.getElementById('scheduleStart').value = startDate;
+        document.getElementById('scheduleEnd').value = endDate;
+        
+        // Load available guides
+        await loadAvailableGuidesForSchedule();
+        const guideSelect = document.getElementById('scheduleGuide');
+        const removeGuideBtn = document.getElementById('removeGuideBtn');
+        if (guideSelect) {
+            // Đảm bảo option "Gỡ HDV" luôn có với style nổi bật
+            const firstOption = guideSelect.querySelector('option[value=""]');
+            if (firstOption) {
+                firstOption.textContent = '❌ Gỡ HDV';
+                firstOption.style.color = '#dc3545';
+                firstOption.style.fontWeight = 'bold';
+            } else {
+                const gỡOption = document.createElement('option');
+                gỡOption.value = '';
+                gỡOption.textContent = '❌ Gỡ HDV';
+                gỡOption.style.color = '#dc3545';
+                gỡOption.style.fontWeight = 'bold';
+                guideSelect.insertBefore(gỡOption, guideSelect.firstChild);
+            }
+            
+            // Set giá trị HDV hiện tại (nếu có)
+            if (s.Ma_huong_dan_vien) {
+                guideSelect.value = s.Ma_huong_dan_vien;
+                // Hiển thị nút "Gỡ HDV" nếu có HDV
+                if (removeGuideBtn) {
+                    removeGuideBtn.style.display = 'block';
+                }
+            } else {
+                guideSelect.value = ''; // Chọn "Gỡ HDV" nếu chưa có HDV
+                // Ẩn nút "Gỡ HDV" nếu chưa có HDV
+                if (removeGuideBtn) {
+                    removeGuideBtn.style.display = 'none';
+                }
+            }
+            
+            // Thêm event listener để hiển thị/ẩn nút "Gỡ HDV" khi thay đổi dropdown
+            guideSelect.addEventListener('change', function() {
+                if (removeGuideBtn) {
+                    if (this.value && this.value !== '') {
+                        removeGuideBtn.style.display = 'block';
+                    } else {
+                        removeGuideBtn.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        isEditScheduleMode = true; 
+        currentScheduleId = lichId;
         document.getElementById('scheduleFormTitle').textContent = 'Chỉnh sửa Lịch khởi hành';
         document.getElementById('scheduleFormContainer').style.display = 'block';
         showSection('schedulesSection');
+        
+        // Scroll to form
+        document.getElementById('scheduleFormContainer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (err) {
         console.error('Edit schedule error:', err);
         showAlert('danger', 'Không thể tải dữ liệu lịch');
@@ -3779,4 +4332,432 @@ function loadDestinationsTab() {
     }, 300);
     
     
+}
+
+// ============================================
+// GUIDE MANAGEMENT FUNCTIONS
+// ============================================
+
+// Load guides tab
+function loadGuidesTab() {
+    console.log('Đang tải tab quản lý Hướng dẫn viên');
+    
+    showSection('guidesSection');
+    
+    const sectionTitleElement = document.getElementById('sectionTitle');
+    if (sectionTitleElement) {
+        sectionTitleElement.textContent = 'Quản lý Hướng dẫn viên';
+    }
+    
+    // Setup event listeners
+    const addGuideBtn = document.getElementById('addGuideBtn');
+    if (addGuideBtn) {
+        addGuideBtn.onclick = () => {
+            showGuideModal();
+        };
+    }
+    
+    const refreshGuidesBtn = document.getElementById('refreshGuidesBtn');
+    if (refreshGuidesBtn) {
+        refreshGuidesBtn.onclick = loadGuides;
+    }
+    
+    const guideStatusFilter = document.getElementById('guideStatusFilter');
+    if (guideStatusFilter) {
+        guideStatusFilter.onchange = loadGuides;
+    }
+    
+    const guideSearchInput = document.getElementById('guideSearchInput');
+    if (guideSearchInput) {
+        let searchTimeout;
+        guideSearchInput.oninput = () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(loadGuides, 500);
+        };
+    }
+    
+    const guideForm = document.getElementById('guideForm');
+    if (guideForm) {
+        guideForm.onsubmit = handleGuideSubmit;
+    }
+    
+    // Load guides
+    loadGuides();
+}
+
+// Load all guides
+async function loadGuides() {
+    const guidesList = document.getElementById('guidesList');
+    if (!guidesList) return;
+    
+    const token = localStorage.getItem('token');
+    const status = document.getElementById('guideStatusFilter')?.value || 'all';
+    const search = document.getElementById('guideSearchInput')?.value || '';
+    
+    try {
+        let url = `http://localhost:5000/api/admin/guides?status=${status}`;
+        if (search) {
+            url += `&search=${encodeURIComponent(search)}`;
+        }
+        
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.data.guides) {
+            renderGuides(data.data.guides);
+        } else {
+            guidesList.innerHTML = '<tr><td colspan="8" class="text-center">Không có dữ liệu</td></tr>';
+        }
+    } catch (error) {
+        console.error('Error loading guides:', error);
+        guidesList.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Lỗi khi tải dữ liệu</td></tr>';
+    }
+}
+
+// Render guides table
+function renderGuides(guides) {
+    const tbody = document.getElementById('guidesList');
+    if (!tbody) return;
+    
+    if (guides.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">Không có hướng dẫn viên nào</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = guides.map(guide => {
+        const statusBadge = {
+            'Hoat_dong': '<span class="badge bg-success">Đang hoạt động</span>',
+            'Nghi_phep': '<span class="badge bg-warning">Nghỉ phép</span>',
+            'Nghi_viec': '<span class="badge bg-danger">Nghỉ việc</span>'
+        }[guide.Trang_thai] || '<span class="badge bg-secondary">N/A</span>';
+        
+        const stats = guide.stats || {};
+        const avgRating = stats.avg_rating || '0.0';
+        const totalTours = stats.total_tours || 0;
+        
+        return `
+            <tr>
+                <td>${guide.Ma_huong_dan_vien}</td>
+                <td>${guide.Ten_huong_dan_vien || 'N/A'}</td>
+                <td>${guide.So_dien_thoai || 'N/A'}</td>
+                <td>${guide.Email || 'N/A'}</td>
+                <td>${statusBadge}</td>
+                <td>${totalTours}</td>
+                <td>${avgRating} ⭐</td>
+                <td>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-primary" onclick="editGuide('${guide.Ma_huong_dan_vien}')">
+                            <i class="fas fa-edit"></i> Sửa
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteGuide('${guide.Ma_huong_dan_vien}')">
+                            <i class="fas fa-trash"></i> ${guide.Trang_thai === 'Nghi_viec' ? 'Xóa' : 'Khóa'}
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Show guide modal
+function showGuideModal(guide = null) {
+    const modal = new bootstrap.Modal(document.getElementById('guideModal'));
+    const form = document.getElementById('guideForm');
+    const modalTitle = document.getElementById('guideModalLabel');
+    const passwordInput = document.getElementById('guidePassword');
+    const passwordLabel = document.getElementById('guidePasswordLabel');
+    const passwordHint = document.getElementById('guidePasswordHint');
+    
+    form.reset();
+    document.getElementById('guideMaHuongDanVien').value = '';
+    
+    if (guide) {
+        // Edit mode
+        modalTitle.textContent = 'Chỉnh sửa Hướng dẫn viên';
+        passwordInput.required = false;
+        passwordLabel.textContent = '';
+        passwordHint.style.display = 'block';
+        
+        document.getElementById('guideMaHuongDanVien').value = guide.Ma_huong_dan_vien;
+        document.getElementById('guideEmail').value = guide.Email || '';
+        document.getElementById('guideTen').value = guide.Ten_huong_dan_vien || '';
+        document.getElementById('guideNgaySinh').value = guide.Ngay_sinh ? guide.Ngay_sinh.split('T')[0] : '';
+        document.getElementById('guideGioiTinh').value = guide.Gioi_tinh || 'Nam';
+        document.getElementById('guideSoDienThoai').value = guide.So_dien_thoai || '';
+        document.getElementById('guideCccd').value = guide.Cccd || '';
+        document.getElementById('guideDiaChi').value = guide.Dia_chi || '';
+        document.getElementById('guideNgonNgu').value = guide.Ngon_ngu || '';
+        document.getElementById('guideKinhNghiem').value = guide.Kinh_nghiem || '';
+        document.getElementById('guideTrangThai').value = guide.Trang_thai || 'Hoat_dong';
+        
+        document.getElementById('guideEmail').disabled = true; // Không cho sửa email
+    } else {
+        // Add mode
+        modalTitle.textContent = 'Thêm Hướng dẫn viên mới';
+        passwordInput.required = true;
+        passwordLabel.textContent = '*';
+        passwordHint.style.display = 'none';
+        document.getElementById('guideEmail').disabled = false;
+    }
+    
+    modal.show();
+}
+
+// Handle guide form submit
+async function handleGuideSubmit(e) {
+    e.preventDefault();
+    
+    const token = localStorage.getItem('token');
+    const maHuongDanVien = document.getElementById('guideMaHuongDanVien').value;
+    const isEdit = !!maHuongDanVien;
+    
+    const formData = {
+        email: document.getElementById('guideEmail').value,
+        password: document.getElementById('guidePassword').value,
+        ten_huong_dan_vien: document.getElementById('guideTen').value,
+        ngay_sinh: document.getElementById('guideNgaySinh').value,
+        gioi_tinh: document.getElementById('guideGioiTinh').value,
+        so_dien_thoai: document.getElementById('guideSoDienThoai').value,
+        cccd: document.getElementById('guideCccd').value,
+        dia_chi: document.getElementById('guideDiaChi').value,
+        ngon_ngu: document.getElementById('guideNgonNgu').value,
+        kinh_nghiem: document.getElementById('guideKinhNghiem').value,
+        trang_thai: document.getElementById('guideTrangThai').value
+    };
+    
+    // Nếu edit và không có password mới, bỏ qua password
+    if (isEdit && !formData.password) {
+        delete formData.password;
+    }
+    
+    try {
+        let url = 'http://localhost:5000/api/admin/guides';
+        let method = 'POST';
+        
+        if (isEdit) {
+            url += `/${maHuongDanVien}`;
+            method = 'PUT';
+        }
+        
+        const response = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Lỗi khi lưu hướng dẫn viên');
+        }
+        
+        const result = await response.json();
+        showAlert('success', result.message || (isEdit ? 'Cập nhật thành công' : 'Thêm thành công'));
+        
+        bootstrap.Modal.getInstance(document.getElementById('guideModal')).hide();
+        
+        // Reload danh sách sau khi cập nhật
+        setTimeout(() => {
+            loadGuides();
+        }, 300);
+    } catch (error) {
+        console.error('Error saving guide:', error);
+        showAlert('danger', error.message || 'Lỗi khi lưu hướng dẫn viên');
+    }
+}
+
+// Edit guide
+async function editGuide(maHuongDanVien) {
+    const token = localStorage.getItem('token');
+    
+    try {
+        const response = await fetch(`http://localhost:5000/api/admin/guides/${maHuongDanVien}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.data.guide) {
+            showGuideModal(data.data.guide);
+        } else {
+            showAlert('danger', 'Không tìm thấy hướng dẫn viên');
+        }
+    } catch (error) {
+        console.error('Error loading guide:', error);
+        showAlert('danger', 'Lỗi khi tải thông tin hướng dẫn viên');
+    }
+}
+
+// Delete/Deactivate guide
+async function deleteGuide(maHuongDanVien) {
+    const token = localStorage.getItem('token');
+    
+    try {
+        // Load guide info to check status
+        const getResponse = await fetch(`http://localhost:5000/api/admin/guides/${maHuongDanVien}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        let actionText = 'xóa';
+        if (getResponse.ok) {
+            const guideData = await getResponse.json();
+            if (guideData.data?.guide?.Trang_thai !== 'Nghi_viec') {
+                actionText = 'khóa';
+            }
+        }
+        
+        if (!confirm(`Bạn có chắc muốn ${actionText} hướng dẫn viên này?`)) {
+            return;
+        }
+        
+        const response = await fetch(`http://localhost:5000/api/admin/guides/${maHuongDanVien}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Không thể xóa hướng dẫn viên');
+        }
+        
+        const result = await response.json();
+        showAlert('success', result.message || `${actionText === 'xóa' ? 'Xóa' : 'Khóa'} thành công`);
+        loadGuides();
+    } catch (error) {
+        console.error('Error deleting guide:', error);
+        showAlert('danger', error.message || 'Lỗi khi xóa hướng dẫn viên');
+    }
+}
+
+// Get schedule status badge
+function getScheduleStatusBadge(status) {
+    const statusMap = {
+        'Còn chỗ': '<span class="badge bg-success">Còn chỗ</span>',
+        'Hết chỗ': '<span class="badge bg-danger">Hết chỗ</span>',
+        'Đang diễn ra': '<span class="badge bg-primary">Đang diễn ra</span>',
+        'Đã diễn ra': '<span class="badge bg-secondary">Đã diễn ra</span>'
+    };
+    return statusMap[status] || `<span class="badge bg-secondary">${status || 'N/A'}</span>`;
+}
+
+// Assign guide to schedule
+async function assignGuideToSchedule(maLich, maHuongDanVien, ngayBatDau, ngayKetThuc) {
+    const token = localStorage.getItem('token');
+    
+    // Nếu chọn option trống, gỡ HDV khỏi lịch
+    if (!maHuongDanVien || maHuongDanVien === '') {
+        if (!confirm('Bạn có chắc chắn muốn gỡ hướng dẫn viên khỏi lịch này?')) {
+            // Reload để reset dropdown về giá trị cũ
+            loadSchedules();
+            return;
+        }
+        
+        // Gửi request để gỡ HDV (gửi null)
+        try {
+            const response = await fetch(`http://localhost:5000/api/admin/schedules/${maLich}/assign-guide`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    ma_huong_dan_vien: null,
+                    date_from: ngayBatDau,
+                    date_to: ngayKetThuc
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Không thể gỡ hướng dẫn viên');
+            }
+            
+            const result = await response.json();
+            showAlert('success', result.message || 'Đã gỡ hướng dẫn viên khỏi lịch');
+            loadSchedules(); // Reload để cập nhật
+        } catch (error) {
+            console.error('Error removing guide:', error);
+            showAlert('danger', error.message || 'Lỗi khi gỡ hướng dẫn viên');
+            loadSchedules(); // Reload để reset dropdown
+        }
+        return;
+    }
+    
+    // Phân công HDV mới
+    try {
+        const response = await fetch(`http://localhost:5000/api/admin/schedules/${maLich}/assign-guide`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                ma_huong_dan_vien: maHuongDanVien,
+                date_from: ngayBatDau,
+                date_to: ngayKetThuc
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Không thể phân công hướng dẫn viên');
+        }
+        
+        const result = await response.json();
+        showAlert('success', result.message || 'Phân công hướng dẫn viên thành công!');
+        loadSchedules(); // Reload để cập nhật
+    } catch (error) {
+        console.error('Error assigning guide:', error);
+        showAlert('danger', error.message || 'Lỗi khi phân công hướng dẫn viên');
+        loadSchedules(); // Reload để reset dropdown
+    }
+}
+
+// Hàm gỡ HDV khỏi lịch (từ bảng) - nút riêng
+async function removeGuideFromSchedule(maLich, ngayBatDau, ngayKetThuc) {
+    if (!confirm('Bạn có chắc chắn muốn gỡ hướng dẫn viên khỏi lịch này?')) {
+        return;
+    }
+    
+    await assignGuideToSchedule(maLich, '', ngayBatDau, ngayKetThuc);
+}
+
+// Hàm gỡ HDV khỏi lịch (từ form) - nút riêng
+async function removeGuideFromScheduleForm() {
+    const guideSelect = document.getElementById('scheduleGuide');
+    if (!guideSelect) return;
+    
+    if (!confirm('Bạn có chắc chắn muốn gỡ hướng dẫn viên khỏi lịch này?')) {
+        return;
+    }
+    
+    // Set dropdown về "Gỡ HDV"
+    guideSelect.value = '';
+    
+    // Ẩn nút "Gỡ HDV"
+    const removeGuideBtn = document.getElementById('removeGuideBtn');
+    if (removeGuideBtn) {
+        removeGuideBtn.style.display = 'none';
+    }
+    
+    // Nếu đang edit, cần lưu thay đổi
+    if (isEditScheduleMode && currentScheduleId) {
+        // Trigger save để cập nhật
+        await saveSchedule();
+    }
 }

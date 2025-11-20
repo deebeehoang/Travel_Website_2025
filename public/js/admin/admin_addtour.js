@@ -1,4 +1,7 @@
 $(document).ready(function() {
+    // Khởi tạo quản lý lịch trình
+    initItineraryManagement();
+    
     // Khởi tạo Summernote cho textarea mô tả
     $('#mo_ta').summernote({
         height: 300,
@@ -81,10 +84,26 @@ $(document).ready(function() {
             // Hiển thị hình ảnh nếu có
             const hinhAnh = tour.Hinh_anh || tour.hinh_anh;
             if (hinhAnh) {
+                // Xử lý đường dẫn ảnh: thêm /images nếu chưa có
+                let imagePath = hinhAnh;
+                if (!imagePath.startsWith('http') && !imagePath.startsWith('/images')) {
+                    if (imagePath.startsWith('/uploads')) {
+                        imagePath = '/images' + imagePath;
+                    } else if (!imagePath.startsWith('/')) {
+                        imagePath = '/images/uploads/' + imagePath;
+                    } else {
+                        imagePath = '/images' + imagePath;
+                    }
+                }
+                
+                const imageUrl = imagePath.startsWith('http') 
+                    ? imagePath 
+                    : (window.CONFIG?.IMAGE_URL || 'http://localhost:5000/images') + imagePath.replace('/images', '');
+                
                 $('#preview-image')
-                    .attr('src', hinhAnh)
+                    .attr('src', imageUrl)
                     .show();
-                console.log('Hiển thị hình ảnh:', hinhAnh);
+                console.log('Hiển thị hình ảnh:', imageUrl);
             } else {
                 console.log('Không có hình ảnh để hiển thị');
             }
@@ -138,8 +157,30 @@ $(document).ready(function() {
         }
     });
 
-    // Xử lý submit form
-    $('#addTourForm').submit(async function(e) {
+    // Xử lý submit form tour - ngăn chặn nếu submit từ form itinerary
+    $('#addTourForm').off('submit').on('submit', async function(e) {
+        // Kiểm tra xem submit có đến từ form itinerary không
+        const submitButton = e.originalEvent?.submitter || document.activeElement;
+        const itineraryForm = $(submitButton).closest('#itineraryForm');
+        
+        // Nếu button nằm trong form itinerary, block form tour submit
+        if (submitButton && itineraryForm.length > 0) {
+            console.log('🚫 [TOUR FORM] Blocked submit from itinerary form');
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
+        }
+        
+        // Nếu button là btnSaveItinerary, block form tour submit
+        if (submitButton && ($(submitButton).attr('id') === 'btnSaveItinerary' || $(submitButton).closest('#itineraryFormContainer').length > 0)) {
+            console.log('🚫 [TOUR FORM] Blocked submit from itinerary button');
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
+        }
+        
         e.preventDefault();
         
         // Kiểm tra xem đang chỉnh sửa hay tạo mới
@@ -194,12 +235,18 @@ $(document).ready(function() {
                 const maTour = tourData.Ma_tour;
                 console.log('Mã tour:', maTour);
                 
-                // 3. Thêm địa danh cho tour
+                // 3. Thêm địa danh cho tour (không bắt buộc)
                 console.log('3. Thêm địa danh cho tour...');
                 try {
-                    const diaDanhResult = await addDiaDanhToTour(maTour);
-                    console.log('Kết quả thêm địa danh:', diaDanhResult);
-                    results.diaDanh = diaDanhResult;
+                    const selectedDiaDanh = $('input[name="dia_danh"]:checked');
+                    if (selectedDiaDanh.length > 0) {
+                        const diaDanhResult = await addDiaDanhToTour(maTour);
+                        console.log('Kết quả thêm địa danh:', diaDanhResult);
+                        results.diaDanh = diaDanhResult;
+                    } else {
+                        console.log('Không có địa danh nào được chọn, bỏ qua bước này');
+                        results.diaDanh = { status: 'skipped', message: 'Không có địa danh nào được chọn' };
+                    }
                 } catch (diaDanhError) {
                     console.error('Lỗi khi thêm địa danh:', diaDanhError);
                     console.warn('Tiếp tục quy trình mặc dù có lỗi khi thêm địa danh');
@@ -233,16 +280,25 @@ $(document).ready(function() {
                     ? `Đã cập nhật tour ${tourData.Ten_tour || maTour} thành công!\n` 
                     : `Đã tạo tour ${tourData.Ten_tour || maTour} thành công!\n`;
                 
-                if (results.diaDanh && results.diaDanh.status === 'success') {
-                    summaryMessage += `- Đã thêm địa danh: ${results.diaDanh.message || 'Thành công'}\n`;
-                } else if (results.diaDanh && results.diaDanh.status === 'error') {
-                    summaryMessage += `- Địa danh: ${results.diaDanh.message || 'Có lỗi'}\n`;
+                if (results.diaDanh) {
+                    if (results.diaDanh.status === 'success') {
+                        summaryMessage += `- Đã thêm địa danh: ${results.diaDanh.message || 'Thành công'}\n`;
+                    } else if (results.diaDanh.status === 'skipped') {
+                        // Không hiển thị thông báo nếu bỏ qua (không có địa danh được chọn)
+                    } else if (results.diaDanh.status === 'error') {
+                        summaryMessage += `- Địa danh: ${results.diaDanh.message || 'Có lỗi'}\n`;
+                    }
                 }
                 
                 if (results.lichKhoiHanh && results.lichKhoiHanh.status === 'success') {
                     summaryMessage += `- Lịch khởi hành: ${results.lichKhoiHanh.message || 'Thành công'}\n`;
                 } else if (results.lichKhoiHanh && results.lichKhoiHanh.status === 'error') {
                     summaryMessage += `- Lịch khởi hành: ${results.lichKhoiHanh.message || 'Có lỗi'}\n`;
+                }
+                
+                // Sau khi tạo tour thành công, reload danh sách lịch khởi hành cho itinerary
+                if (maTour) {
+                    loadSchedulesForItinerary();
                 }
                 
                 alert(summaryMessage);
@@ -253,7 +309,19 @@ $(document).ready(function() {
                 }
                 localStorage.removeItem('newScheduleData');
                 
-                // 6. Chuyển hướng
+                // 6. Hỏi người dùng có muốn quản lý lịch trình không
+                if (!isEditMode && maTour) {
+                    const manageItinerary = confirm('Tour đã được tạo thành công!\n\nBạn có muốn quản lý lịch trình cho tour này ngay bây giờ không?');
+                    if (manageItinerary) {
+                        // Scroll đến phần quản lý lịch trình
+                        $('html, body').animate({
+                            scrollTop: $('#itineraryListContainer').offset().top - 100
+                        }, 500);
+                        return; // Không chuyển hướng, ở lại trang để quản lý lịch trình
+                    }
+                }
+                
+                // Chuyển hướng về trang quản lý tour
                 console.log('Chuyển hướng về trang quản lý tour...');
                 window.location.href = 'admin.html#tours';
             } catch (tourError) {
@@ -705,6 +773,9 @@ async function loadLichKhoiHanh() {
                 const maLich = $(this).data('id');
                 deleteSchedule(maLich, editTourId);
             });
+            
+            // Sau khi load schedules vào #schedulesList, cập nhật dropdown cho itinerary
+            loadSchedulesForItinerary();
         }
 
         // Kiểm tra xem có lịch khởi hành tạm thời không
@@ -1237,4 +1308,815 @@ async function deleteSchedule(maLich, maTour) {
         console.error('Lỗi khi xóa lịch khởi hành:', error);
         alert('Lỗi khi xóa lịch khởi hành: ' + error.message);
     }
+}
+
+// ============================================
+// QUẢN LÝ LỊCH TRÌNH THEO LỊCH KHỞI HÀNH (ITINERARY)
+// ============================================
+
+let itineraryList = [];
+let currentScheduleId = null;
+let currentTourDays = 0;
+
+/**
+ * Khởi tạo quản lý lịch trình
+ */
+function initItineraryManagement() {
+    // Load danh sách lịch khởi hành vào dropdown
+    loadSchedulesForItinerary();
+    
+    // Lắng nghe sự kiện chọn lịch khởi hành
+    $('#selectScheduleForItinerary').on('change', function() {
+        const maLich = $(this).val();
+        if (maLich) {
+            currentScheduleId = maLich;
+            loadItineraryForSchedule(maLich);
+            $('#itineraryFormContainer').show();
+            // Chờ một chút để form được render xong rồi mới reset
+            setTimeout(() => {
+                resetItineraryForm(); // Reset form khi chọn lịch mới
+            }, 100);
+        } else {
+            currentScheduleId = null;
+            $('#itineraryListContainer').html(`
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Vui lòng chọn lịch khởi hành để xem và quản lý lịch trình.
+                </div>
+            `);
+            $('#itineraryFormContainer').hide();
+        }
+    });
+
+    // Lắng nghe submit form - ngăn chặn default behavior
+    $('#itineraryForm').off('submit').on('submit', function(e) {
+        console.log('🟡 [ITINERARY] Form submit event triggered');
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        handleItinerarySubmit(e);
+        return false;
+    });
+    
+    // Ngăn chặn form submit khi nhấn Enter trong input
+    $('#itineraryForm input, #itineraryForm textarea').off('keypress').on('keypress', function(e) {
+        if (e.which === 13) {
+            console.log('🟡 [ITINERARY] Enter key pressed in input');
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            handleItinerarySubmit(e);
+            return false;
+        }
+    });
+    
+    // Ngăn chặn form tour chính submit khi click button trong form itinerary
+    $('#itineraryForm button[type="submit"]').off('click').on('click', function(e) {
+        console.log('🟡 [ITINERARY] Submit button clicked');
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        // Tìm form itinerary gần nhất
+        const itineraryForm = $(this).closest('#itineraryForm');
+        if (itineraryForm.length > 0) {
+            handleItinerarySubmit(e);
+        }
+        
+        return false;
+    });
+}
+
+/**
+ * Load danh sách lịch khởi hành vào dropdown
+ */
+function loadSchedulesForItinerary() {
+    const selectSchedule = $('#selectScheduleForItinerary');
+    
+    // Reset dropdown
+    selectSchedule.empty();
+    selectSchedule.append('<option value="">-- Chọn lịch khởi hành --</option>');
+    
+    // Lấy danh sách lịch khởi hành từ container (nếu có)
+    const schedulesList = $('#schedulesList');
+    if (schedulesList.length > 0) {
+        // Tìm tất cả các input radio có name="lich_khoi_hanh"
+        const scheduleInputs = schedulesList.find('input[name="lich_khoi_hanh"]');
+        
+        scheduleInputs.each(function() {
+            const $input = $(this);
+            const maLich = $input.val();
+            const $label = $input.next('label');
+            const labelText = $label.text();
+            
+            // Parse thông tin từ label text hoặc từ parent element
+            if (maLich) {
+                // Tìm thông tin ngày từ label
+                const match = labelText.match(/Thời gian:\s*(\d{1,2}\/\d{1,2}\/\d{4})\s*-\s*(\d{1,2}\/\d{1,2}\/\d{4})/);
+                if (match) {
+                    const displayText = `${maLich} (${match[1]} - ${match[2]})`;
+                    selectSchedule.append(`<option value="${maLich}">${displayText}</option>`);
+                } else {
+                    selectSchedule.append(`<option value="${maLich}">${maLich}</option>`);
+                }
+            }
+        });
+    }
+    
+    // Nếu đang edit tour, load từ API (ưu tiên)
+    const urlParams = new URLSearchParams(window.location.search);
+    const editTourId = urlParams.get('edit');
+    if (editTourId) {
+        console.log('Đang load lịch khởi hành từ API cho tour:', editTourId);
+        loadSchedulesFromAPI(editTourId);
+    } else {
+        // Nếu không phải edit mode, lấy từ mã tour hiện tại
+        const maTour = $('#ma_tour').val().trim();
+        if (maTour) {
+            console.log('Đang load lịch khởi hành từ API cho tour:', maTour);
+            loadSchedulesFromAPI(maTour);
+        }
+    }
+}
+
+/**
+ * Load lịch khởi hành từ API
+ */
+async function loadSchedulesFromAPI(maTour) {
+    try {
+        const token = localStorage.getItem('token');
+        const apiUrl = window.CONFIG?.API_BASE_URL || '/api';
+        
+        // Sử dụng endpoint đúng: /tours/:tourId/upcoming-schedules
+        const response = await fetch(`${apiUrl}/tours/${maTour}/upcoming-schedules`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.status === 'success' && data.data && data.data.schedules) {
+                const selectSchedule = $('#selectScheduleForItinerary');
+                // Xóa option mặc định và thêm lại
+                selectSchedule.empty();
+                selectSchedule.append('<option value="">-- Chọn lịch khởi hành --</option>');
+                
+                data.data.schedules.forEach(schedule => {
+                    const displayText = `${schedule.Ma_lich} (${formatDate(schedule.Ngay_bat_dau)} - ${formatDate(schedule.Ngay_ket_thuc)})`;
+                    selectSchedule.append(`<option value="${schedule.Ma_lich}">${displayText}</option>`);
+                });
+                
+                console.log(`Đã load ${data.data.schedules.length} lịch khởi hành vào dropdown`);
+            } else {
+                console.warn('API response không có dữ liệu schedules:', data);
+            }
+        } else {
+            const errorText = await response.text();
+            console.error('Error loading schedules:', response.status, errorText);
+        }
+    } catch (error) {
+        console.error('Error loading schedules from API:', error);
+    }
+}
+
+/**
+ * Load lịch trình cho lịch khởi hành
+ */
+async function loadItineraryForSchedule(maLich) {
+    if (!maLich) return;
+    
+    try {
+        const token = localStorage.getItem('token');
+        const apiUrl = window.CONFIG?.API_BASE_URL || '/api';
+        
+        const response = await fetch(`${apiUrl}/schedule/${maLich}/itinerary`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.status === 'success') {
+                itineraryList = data.data.itinerary || [];
+                
+                // Lấy thông tin tour để hiển thị số ngày tối đa
+                await loadTourInfoForSchedule(maLich);
+                
+                // Render danh sách lịch trình
+                renderItineraryList();
+                
+                // Nếu đã có lịch trình, hiển thị nút "Thêm ngày mới"
+                if (itineraryList.length > 0) {
+                    $('#btnAddNewDay').show();
+                } else {
+                    // Nếu chưa có lịch trình và đã biết số ngày tour, hiển thị nút tự động tạo
+                    if (currentTourDays > 0) {
+                        showAutoGenerateButton();
+                    }
+                }
+            }
+        } else {
+            const errorData = await response.json().catch(() => ({ message: 'Lỗi không xác định' }));
+            console.error('Error loading itinerary:', errorData);
+            
+            // Lấy thông tin tour để hiển thị số ngày tối đa (ngay cả khi có lỗi)
+            await loadTourInfoForSchedule(maLich);
+            
+            // Nếu lỗi do cột Ma_lich chưa tồn tại, hiển thị thông báo
+            if (errorData.error && errorData.error.includes('Ma_lich')) {
+                $('#itineraryListContainer').html(`
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Cảnh báo:</strong> Cột Ma_lich chưa tồn tại trong database. 
+                        Vui lòng chạy migration SQL: <code>src/database/add_ma_lich_to_itinerary.sql</code>
+                        <br><br>
+                        <button class="btn btn-sm btn-primary" onclick="location.reload()">Tải lại trang</button>
+                    </div>
+                `);
+            } else {
+                itineraryList = [];
+                renderItineraryList();
+                
+                // Hiển thị nút tự động tạo nếu có số ngày tour
+                if (currentTourDays > 0) {
+                    showAutoGenerateButton();
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error loading itinerary for schedule:', error);
+        itineraryList = [];
+        renderItineraryList();
+    }
+}
+
+/**
+ * Load thông tin tour từ lịch khởi hành
+ */
+async function loadTourInfoForSchedule(maLich) {
+    try {
+        const token = localStorage.getItem('token');
+        const apiUrl = window.CONFIG?.API_BASE_URL || '/api';
+        
+        // Lấy thông tin lịch khởi hành
+        const scheduleResponse = await fetch(`${apiUrl}/tours/schedules/${maLich}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (scheduleResponse.ok) {
+            const scheduleData = await scheduleResponse.json();
+            if (scheduleData.status === 'success' && scheduleData.data && scheduleData.data.schedule) {
+                const maTour = scheduleData.data.schedule.Ma_tour;
+                
+                // Lấy thông tin tour
+                const tourResponse = await fetch(`${apiUrl}/tours/${maTour}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (tourResponse.ok) {
+                    const tourData = await tourResponse.json();
+                    if (tourData.status === 'success' && tourData.data && tourData.data.tour) {
+                        currentTourDays = tourData.data.tour.Thoi_gian || 0;
+                        $('#itineraryNgayThu').attr('max', currentTourDays);
+                        $('#maxDayHint').text(`Tối đa: ${currentTourDays} ngày`);
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error loading tour info:', error);
+    }
+}
+
+// Hàm load lịch trình cho tour
+async function loadItineraryForTour(maTour) {
+    if (!maTour) return;
+    
+    try {
+        const token = localStorage.getItem('token');
+        const apiUrl = window.CONFIG?.API_BASE_URL || '/api';
+        
+        const response = await fetch(`${apiUrl}/tour/${maTour}/itinerary`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.status === 'success') {
+                itineraryList = data.data.itinerary || [];
+                renderItineraryList();
+            }
+        }
+    } catch (error) {
+        console.error('Error loading itinerary:', error);
+        itineraryList = [];
+        renderItineraryList();
+    }
+}
+
+/**
+ * Render danh sách lịch trình dưới dạng bảng
+ */
+function renderItineraryList() {
+    const container = $('#itineraryListContainer');
+    
+    if (!itineraryList || itineraryList.length === 0) {
+        let html = `
+            <div class="alert alert-info mb-3">
+                <i class="fas fa-info-circle me-2"></i>
+                Chưa có lịch trình. Hãy thêm lịch trình mới bằng form ở trên.
+        `;
+        
+        // Nếu có số ngày tour, hiển thị nút tự động tạo
+        if (currentTourDays > 0) {
+            html += `
+                <br><br>
+                <button type="button" class="btn btn-success" onclick="autoGenerateItineraryDays()">
+                    <i class="fas fa-magic me-1"></i>Tự động tạo ${currentTourDays} ngày lịch trình
+                </button>
+            `;
+        }
+        
+        html += `</div>`;
+        container.html(html);
+        return;
+    }
+
+    // Tạo bảng HTML
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-primary">
+                    <tr>
+                        <th style="width: 80px;">Ngày thứ</th>
+                        <th>Tiêu đề</th>
+                        <th style="width: 150px;">Thời gian</th>
+                        <th style="width: 200px;">Địa điểm</th>
+                        <th>Mô tả</th>
+                        <th style="width: 150px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    itineraryList.forEach((day) => {
+        html += `
+            <tr data-itinerary-id="${day.Ma_itinerary}">
+                <td class="text-center"><strong>${day.Ngay_thu}</strong></td>
+                <td>${escapeHtml(day.Tieu_de || '')}</td>
+                <td>${escapeHtml(day.Thoi_gian_hoat_dong || '-')}</td>
+                <td>${escapeHtml(day.Dia_diem || '-')}</td>
+                <td>
+                    <div style="max-height: 60px; overflow: hidden; text-overflow: ellipsis;">
+                        ${escapeHtml(day.Mo_ta || '-')}
+                    </div>
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-warning" onclick="editItineraryDay(${day.Ma_itinerary})" title="Chỉnh sửa">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="deleteItineraryDay(${day.Ma_itinerary})" title="Xóa">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    // Thêm nút tự động tạo nếu chưa đủ số ngày
+    if (currentTourDays > 0 && itineraryList.length < currentTourDays) {
+        const missingDays = currentTourDays - itineraryList.length;
+        html += `
+            <div class="mt-3">
+                <button type="button" class="btn btn-success" onclick="autoGenerateItineraryDays()">
+                    <i class="fas fa-magic me-1"></i>Tự động tạo ${missingDays} ngày còn lại
+                </button>
+            </div>
+        `;
+    }
+
+    container.html(html);
+}
+
+/**
+ * Tự động tạo các ngày lịch trình dựa trên số ngày tour
+ */
+async function autoGenerateItineraryDays() {
+    if (!currentScheduleId) {
+        alert('Vui lòng chọn lịch khởi hành trước');
+        return;
+    }
+    
+    if (!currentTourDays || currentTourDays <= 0) {
+        alert('Không thể xác định số ngày tour');
+        return;
+    }
+    
+    if (!confirm(`Bạn có chắc muốn tự động tạo ${currentTourDays} ngày lịch trình cho lịch khởi hành này?`)) {
+        return;
+    }
+    
+    try {
+        const token = localStorage.getItem('token');
+        const apiUrl = window.CONFIG?.API_BASE_URL || '/api';
+        
+        // Lấy thông tin tour từ lịch khởi hành
+        const scheduleResponse = await fetch(`${apiUrl}/tours/schedules/${currentScheduleId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!scheduleResponse.ok) {
+            throw new Error('Không thể lấy thông tin lịch khởi hành');
+        }
+        
+        const scheduleData = await scheduleResponse.json();
+        const maTour = scheduleData.data?.schedule?.Ma_tour;
+        
+        if (!maTour) {
+            throw new Error('Không tìm thấy mã tour');
+        }
+        
+        // Tạo từng ngày một
+        const createdDays = [];
+        for (let day = 1; day <= currentTourDays; day++) {
+            // Kiểm tra xem ngày đã tồn tại chưa
+            const existingDay = itineraryList.find(d => d.Ngay_thu === day);
+            if (existingDay) {
+                console.log(`Ngày ${day} đã tồn tại, bỏ qua`);
+                continue;
+            }
+            
+            try {
+                const response = await fetch(`${apiUrl}/schedule/${currentScheduleId}/itinerary`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        Ngay_thu: day,
+                        Tieu_de: `Ngày ${day}`,
+                        Mo_ta: `Mô tả chi tiết cho ngày ${day}`,
+                        Thoi_gian_hoat_dong: '',
+                        Dia_diem: ''
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        createdDays.push(day);
+                    }
+                } else {
+                    const errorData = await response.json().catch(() => ({ message: 'Lỗi không xác định' }));
+                    console.warn(`Không thể tạo ngày ${day}:`, errorData);
+                }
+            } catch (error) {
+                console.warn(`Lỗi khi tạo ngày ${day}:`, error);
+            }
+        }
+        
+        if (createdDays.length > 0) {
+            alert(`Đã tự động tạo ${createdDays.length}/${currentTourDays} ngày lịch trình`);
+            await loadItineraryForSchedule(currentScheduleId);
+        } else {
+            alert('Không thể tạo lịch trình. Có thể tất cả các ngày đã tồn tại hoặc có lỗi xảy ra.');
+        }
+    } catch (error) {
+        console.error('Error auto-generating itinerary:', error);
+        alert('Lỗi khi tự động tạo lịch trình: ' + error.message);
+    }
+}
+
+/**
+ * Xử lý submit form lịch trình
+ * Phải là global function để có thể gọi từ onclick
+ */
+window.handleItinerarySubmit = async function handleItinerarySubmit(e) {
+    // Ngăn chặn tất cả các event propagation
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+    }
+    
+    console.log('🔵 [ITINERARY] handleItinerarySubmit called');
+    console.log('🔵 [ITINERARY] Event:', e);
+    console.log('🔵 [ITINERARY] currentScheduleId:', currentScheduleId);
+    
+    // Kiểm tra xem button có phải là button của form itinerary không
+    // QUAN TRỌNG: Kiểm tra button ID trước vì form itinerary nằm trong form tour
+    if (e && e.target) {
+        const button = $(e.target);
+        const buttonId = button.attr('id');
+        
+        console.log('🔵 [ITINERARY] Button ID:', buttonId);
+        
+        // Nếu button là btnSaveItinerary, chắc chắn là từ form itinerary - cho phép tiếp tục
+        if (buttonId === 'btnSaveItinerary') {
+            console.log('✅ [ITINERARY] Button is btnSaveItinerary, proceeding...');
+            // Tiếp tục xử lý - KHÔNG return false
+        } else {
+            // Kiểm tra xem button có nằm trong form/container itinerary không
+            const itineraryForm = button.closest('#itineraryForm');
+            const itineraryContainer = button.closest('#itineraryFormContainer');
+            
+            console.log('🔵 [ITINERARY] In itinerary form:', itineraryForm.length > 0);
+            console.log('🔵 [ITINERARY] In itinerary container:', itineraryContainer.length > 0);
+            
+            if (itineraryForm.length > 0 || itineraryContainer.length > 0) {
+                console.log('✅ [ITINERARY] Button is in itinerary form/container, proceeding...');
+                // Tiếp tục xử lý
+            } else {
+                // Nếu button không liên quan đến itinerary, có thể là từ form tour, block
+                console.log('🚫 [ITINERARY] Blocked - button is not related to itinerary');
+                return false;
+            }
+        }
+    }
+    
+    if (!currentScheduleId) {
+        alert('Vui lòng chọn lịch khởi hành trước');
+        return false;
+    }
+
+    const ngayThu = parseInt($('#itineraryNgayThu').val());
+    const tieuDe = $('#itineraryTieuDe').val().trim();
+    const moTa = $('#itineraryMoTa').val().trim();
+    const thoiGian = $('#itineraryThoiGian').val().trim();
+    const diaDiem = $('#itineraryDiaDiem').val().trim();
+    const editId = $('#itineraryEditId').val();
+
+    // Validation
+    if (!ngayThu || ngayThu < 1) {
+        alert('Vui lòng nhập số ngày hợp lệ (từ 1 trở lên)');
+        $('#itineraryNgayThu').focus();
+        return;
+    }
+
+    if (currentTourDays > 0 && ngayThu > currentTourDays) {
+        alert(`Số ngày (${ngayThu}) không được vượt quá tổng số ngày của tour (${currentTourDays})`);
+        $('#itineraryNgayThu').focus();
+        return;
+    }
+
+    if (!tieuDe) {
+        alert('Vui lòng nhập tiêu đề');
+        $('#itineraryTieuDe').focus();
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('token');
+        const apiUrl = window.CONFIG?.API_BASE_URL || '/api';
+        
+        let response;
+        
+        if (editId) {
+            // Cập nhật
+            console.log('🔄 [ITINERARY] Updating itinerary:', editId);
+            console.log('🔄 [ITINERARY] Update data:', {
+                Ngay_thu: ngayThu,
+                Tieu_de: tieuDe,
+                Mo_ta: moTa,
+                Thoi_gian_hoat_dong: thoiGian,
+                Dia_diem: diaDiem
+            });
+            
+            response = await fetch(`${apiUrl}/itinerary/${editId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    Ngay_thu: ngayThu,
+                    Tieu_de: tieuDe,
+                    Mo_ta: moTa,
+                    Thoi_gian_hoat_dong: thoiGian,
+                    Dia_diem: diaDiem
+                })
+            });
+            
+            console.log('🔄 [ITINERARY] Update response status:', response.status);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ [ITINERARY] Update failed:', response.status, errorText);
+                let errorData;
+                try {
+                    errorData = JSON.parse(errorText);
+                } catch (e) {
+                    errorData = { message: errorText || 'Không thể lưu lịch trình' };
+                }
+                throw new Error(errorData.message || `HTTP ${response.status}: ${errorText}`);
+            }
+        } else {
+            // Tạo mới
+            response = await fetch(`${apiUrl}/schedule/${currentScheduleId}/itinerary`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    Ngay_thu: ngayThu,
+                    Tieu_de: tieuDe,
+                    Mo_ta: moTa,
+                    Thoi_gian_hoat_dong: thoiGian,
+                    Dia_diem: diaDiem
+                })
+            });
+        }
+
+        // Xử lý response cho cả POST và PUT
+        const responseText = await response.text();
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (e) {
+            console.error('❌ [ITINERARY] Invalid JSON response:', responseText);
+            throw new Error('Phản hồi không hợp lệ từ server');
+        }
+        
+        console.log('📥 [ITINERARY] Response data:', data);
+        
+        if (data.status === 'success') {
+            const message = editId ? 'Đã cập nhật lịch trình thành công' : 'Đã thêm lịch trình thành công';
+            
+            console.log('✅ [ITINERARY]', message);
+            console.log('✅ [ITINERARY] Response data:', data);
+            
+            // Hiển thị toast hoặc alert (không dùng alert để tránh block UI)
+            if (window.showToast) {
+                showToast(message, 'success');
+            } else {
+                // Dùng console log thay vì alert để không block
+                console.log('✅', message);
+            }
+            
+            // Reload danh sách lịch trình để hiển thị dữ liệu mới nhất
+            console.log('🔄 [ITINERARY] Reloading itinerary for schedule:', currentScheduleId);
+            await loadItineraryForSchedule(currentScheduleId);
+            
+            // Reset form sau khi reload xong
+            resetItineraryForm();
+            
+            // Hiển thị nút "Thêm ngày mới" sau khi lưu thành công
+            $('#btnAddNewDay').show();
+            
+            // Ngăn chặn mọi redirect
+            return false;
+        } else {
+            throw new Error(data.message || 'Lỗi khi lưu lịch trình');
+        }
+    } catch (error) {
+        console.error('❌ [ITINERARY] Error saving itinerary:', error);
+        alert('Lỗi khi lưu lịch trình: ' + error.message);
+        return false;
+    }
+    
+    return false;
+}
+
+/**
+ * Chỉnh sửa lịch trình
+ */
+function editItineraryDay(maItinerary) {
+    const day = itineraryList.find(d => d.Ma_itinerary === maItinerary);
+    if (!day) {
+        alert('Không tìm thấy lịch trình');
+        return;
+    }
+
+    // Điền form
+    $('#itineraryEditId').val(day.Ma_itinerary);
+    $('#itineraryNgayThu').val(day.Ngay_thu);
+    $('#itineraryTieuDe').val(day.Tieu_de || '');
+    $('#itineraryMoTa').val(day.Mo_ta || '');
+    $('#itineraryThoiGian').val(day.Thoi_gian_hoat_dong || '');
+    $('#itineraryDiaDiem').val(day.Dia_diem || '');
+    
+    // Cập nhật UI
+    $('#itineraryFormTitle').html('<i class="fas fa-edit me-2"></i>Chỉnh sửa Lịch trình');
+    $('#btnSaveItinerary').html('<i class="fas fa-save me-1"></i>Cập nhật');
+    $('#btnAddNewDay').show(); // Hiển thị nút thêm mới khi đang edit
+    
+    // Scroll đến form
+    $('html, body').animate({
+        scrollTop: $('#itineraryFormContainer').offset().top - 100
+    }, 500);
+}
+
+/**
+ * Reset form lịch trình
+ */
+function resetItineraryForm() {
+    const form = $('#itineraryForm');
+    if (form.length > 0 && form[0]) {
+        form[0].reset();
+    }
+    
+    $('#itineraryEditId').val('');
+    $('#itineraryFormTitle').html('<i class="fas fa-plus-circle me-2"></i>Thêm Lịch trình Mới');
+    $('#btnSaveItinerary').html('<i class="fas fa-save me-1"></i>Lưu');
+    $('#btnAddNewDay').hide();
+    
+    // Scroll đến form để dễ nhập tiếp (nếu form container tồn tại và visible)
+    const formContainer = $('#itineraryFormContainer');
+    if (formContainer.length > 0 && formContainer.is(':visible')) {
+        $('html, body').animate({
+            scrollTop: formContainer.offset().top - 100
+        }, 300);
+    }
+}
+
+/**
+ * Hủy form
+ */
+function cancelItineraryForm() {
+    resetItineraryForm();
+}
+
+
+/**
+ * Xóa lịch trình
+ */
+async function deleteItineraryDay(maItinerary) {
+    if (!confirm('Bạn có chắc muốn xóa lịch trình này?')) {
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('token');
+        const apiUrl = window.CONFIG?.API_BASE_URL || '/api';
+        
+        const response = await fetch(`${apiUrl}/itinerary/${maItinerary}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Không thể xóa');
+        }
+
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            alert('Đã xóa lịch trình thành công');
+            if (currentScheduleId) {
+                await loadItineraryForSchedule(currentScheduleId);
+            }
+        } else {
+            throw new Error(data.message || 'Lỗi khi xóa');
+        }
+    } catch (error) {
+        console.error('Error deleting itinerary:', error);
+        alert('Lỗi khi xóa: ' + error.message);
+    }
+}
+
+/**
+ * Format date helper
+ */
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN');
+}
+
+// Hàm escape HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = $('<div>');
+    div.text(text);
+    return div.html();
 }

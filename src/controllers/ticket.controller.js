@@ -115,6 +115,32 @@ class TicketController {
       res.status(500).json({ status: 'error', message: 'Error updating ticket status', error: error.message });
     }
   }
+
+  /**
+   * Tự động cập nhật trạng thái vé đã hết hạn (Admin only)
+   * POST /api/tickets/auto-update-expired
+   */
+  static async autoUpdateExpiredTickets(req, res) {
+    try {
+      const result = await Ticket.autoUpdateExpiredTickets();
+      
+      res.status(200).json({
+        status: 'success',
+        message: `Đã tự động cập nhật ${result.updated} vé từ "Chưa sử dụng" thành "Đã sử dụng"`,
+        data: {
+          updated: result.updated,
+          tickets: result.tickets
+        }
+      });
+    } catch (error) {
+      console.error('Auto update expired tickets error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Lỗi khi tự động cập nhật trạng thái vé',
+        error: error.message
+      });
+    }
+  }
 }
 
 module.exports = TicketController;

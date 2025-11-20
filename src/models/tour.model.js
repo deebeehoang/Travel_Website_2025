@@ -237,7 +237,7 @@ class Tour {
     try {
       await connection.beginTransaction();
       
-      const { ma_lich, ma_tour, ngay_bat_dau, ngay_ket_thuc, so_cho } = scheduleData;
+      const { ma_lich, ma_tour, ngay_bat_dau, ngay_ket_thuc, so_cho, ma_huong_dan_vien } = scheduleData;
       
       // Validation: So_cho > 0
       if (!so_cho || so_cho <= 0) {
@@ -260,7 +260,7 @@ class Tour {
       
       // Validation: Kiểm tra trùng thời gian với lịch khởi hành khác cùng Ma_tour
       const [overlappingSchedules] = await connection.query(
-        `SELECT Ma_lich 
+        `SELECT Ma_lich, Ngay_bat_dau, Ngay_ket_thuc
          FROM lich_khoi_hanh 
          WHERE Ma_tour = ? 
            AND (
@@ -272,7 +272,44 @@ class Tour {
       );
       
       if (overlappingSchedules.length > 0) {
-        throw new Error('Đã có lịch khởi hành trùng thời gian cho tour này');
+        const conflict = overlappingSchedules[0];
+        const conflictStart = new Date(conflict.Ngay_bat_dau).toLocaleDateString('vi-VN');
+        const conflictEnd = new Date(conflict.Ngay_ket_thuc).toLocaleDateString('vi-VN');
+        throw new Error(`Đã có lịch khởi hành trùng thời gian cho tour này! Lịch trùng: ${conflict.Ma_lich} (từ ${conflictStart} đến ${conflictEnd})`);
+      }
+      
+      // Validation: Kiểm tra trùng lịch cho HDV nếu có
+      if (ma_huong_dan_vien && ma_huong_dan_vien !== null && ma_huong_dan_vien !== '') {
+        const Guide = require('./guide.model');
+        const isAvailable = await Guide.isAvailable(
+          ma_huong_dan_vien,
+          ngay_bat_dau,
+          ngay_ket_thuc
+        );
+        
+        if (!isAvailable) {
+          // Lấy thông tin lịch trùng
+          const [conflictingSchedules] = await connection.query(
+            `SELECT Ma_lich, Ngay_bat_dau, Ngay_ket_thuc
+             FROM Lich_khoi_hanh
+             WHERE Ma_huong_dan_vien = ?
+               AND (
+                 (Ngay_bat_dau >= ? AND Ngay_bat_dau <= ?)
+                 OR (Ngay_ket_thuc >= ? AND Ngay_ket_thuc <= ?)
+                 OR (Ngay_bat_dau <= ? AND Ngay_ket_thuc >= ?)
+               )
+             LIMIT 1`,
+            [ma_huong_dan_vien, ngay_bat_dau, ngay_ket_thuc, ngay_bat_dau, ngay_ket_thuc, ngay_bat_dau, ngay_ket_thuc]
+          );
+          
+          let errorMessage = 'Hướng dẫn viên đã có lịch trùng thời gian';
+          if (conflictingSchedules.length > 0) {
+            const conflict = conflictingSchedules[0];
+            errorMessage += ` (Lịch: ${conflict.Ma_lich}, từ ${conflict.Ngay_bat_dau} đến ${conflict.Ngay_ket_thuc})`;
+          }
+          
+          throw new Error(errorMessage);
+        }
       }
       
       // Xác định So_cho_con_lai và Trang_thai
@@ -311,27 +348,55 @@ class Tour {
         trang_thai = 'Đã diễn ra';
       }
       
-      // Insert vào database
+      // Insert vào database (bao gồm Ma_huong_dan_vien nếu có)
       if (hasSoChoConLai && hasTrangThai) {
-        await connection.query(
-          'INSERT INTO lich_khoi_hanh (Ma_lich, Ma_tour, Ngay_bat_dau, Ngay_ket_thuc, So_cho, So_cho_con_lai, Trang_thai) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [ma_lich, ma_tour, ngay_bat_dau, ngay_ket_thuc, so_cho, so_cho_con_lai, trang_thai]
-        );
+        if (ma_huong_dan_vien) {
+          await connection.query(
+            'INSERT INTO lich_khoi_hanh (Ma_lich, Ma_tour, Ngay_bat_dau, Ngay_ket_thuc, So_cho, So_cho_con_lai, Trang_thai, Ma_huong_dan_vien) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [ma_lich, ma_tour, ngay_bat_dau, ngay_ket_thuc, so_cho, so_cho_con_lai, trang_thai, ma_huong_dan_vien]
+          );
+        } else {
+          await connection.query(
+            'INSERT INTO lich_khoi_hanh (Ma_lich, Ma_tour, Ngay_bat_dau, Ngay_ket_thuc, So_cho, So_cho_con_lai, Trang_thai) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [ma_lich, ma_tour, ngay_bat_dau, ngay_ket_thuc, so_cho, so_cho_con_lai, trang_thai]
+          );
+        }
       } else if (hasSoChoConLai) {
-        await connection.query(
-          'INSERT INTO lich_khoi_hanh (Ma_lich, Ma_tour, Ngay_bat_dau, Ngay_ket_thuc, So_cho, So_cho_con_lai) VALUES (?, ?, ?, ?, ?, ?)',
-          [ma_lich, ma_tour, ngay_bat_dau, ngay_ket_thuc, so_cho, so_cho_con_lai]
-        );
+        if (ma_huong_dan_vien) {
+          await connection.query(
+            'INSERT INTO lich_khoi_hanh (Ma_lich, Ma_tour, Ngay_bat_dau, Ngay_ket_thuc, So_cho, So_cho_con_lai, Ma_huong_dan_vien) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [ma_lich, ma_tour, ngay_bat_dau, ngay_ket_thuc, so_cho, so_cho_con_lai, ma_huong_dan_vien]
+          );
+        } else {
+          await connection.query(
+            'INSERT INTO lich_khoi_hanh (Ma_lich, Ma_tour, Ngay_bat_dau, Ngay_ket_thuc, So_cho, So_cho_con_lai) VALUES (?, ?, ?, ?, ?, ?)',
+            [ma_lich, ma_tour, ngay_bat_dau, ngay_ket_thuc, so_cho, so_cho_con_lai]
+          );
+        }
       } else if (hasTrangThai) {
-        await connection.query(
-          'INSERT INTO lich_khoi_hanh (Ma_lich, Ma_tour, Ngay_bat_dau, Ngay_ket_thuc, So_cho, Trang_thai) VALUES (?, ?, ?, ?, ?, ?)',
-          [ma_lich, ma_tour, ngay_bat_dau, ngay_ket_thuc, so_cho, trang_thai]
-        );
+        if (ma_huong_dan_vien) {
+          await connection.query(
+            'INSERT INTO lich_khoi_hanh (Ma_lich, Ma_tour, Ngay_bat_dau, Ngay_ket_thuc, So_cho, Trang_thai, Ma_huong_dan_vien) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [ma_lich, ma_tour, ngay_bat_dau, ngay_ket_thuc, so_cho, trang_thai, ma_huong_dan_vien]
+          );
+        } else {
+          await connection.query(
+            'INSERT INTO lich_khoi_hanh (Ma_lich, Ma_tour, Ngay_bat_dau, Ngay_ket_thuc, So_cho, Trang_thai) VALUES (?, ?, ?, ?, ?, ?)',
+            [ma_lich, ma_tour, ngay_bat_dau, ngay_ket_thuc, so_cho, trang_thai]
+          );
+        }
       } else {
-        await connection.query(
-          'INSERT INTO lich_khoi_hanh (Ma_lich, Ma_tour, Ngay_bat_dau, Ngay_ket_thuc, So_cho) VALUES (?, ?, ?, ?, ?)',
-          [ma_lich, ma_tour, ngay_bat_dau, ngay_ket_thuc, so_cho]
-        );
+        if (ma_huong_dan_vien) {
+          await connection.query(
+            'INSERT INTO lich_khoi_hanh (Ma_lich, Ma_tour, Ngay_bat_dau, Ngay_ket_thuc, So_cho, Ma_huong_dan_vien) VALUES (?, ?, ?, ?, ?, ?)',
+            [ma_lich, ma_tour, ngay_bat_dau, ngay_ket_thuc, so_cho, ma_huong_dan_vien]
+          );
+        } else {
+          await connection.query(
+            'INSERT INTO lich_khoi_hanh (Ma_lich, Ma_tour, Ngay_bat_dau, Ngay_ket_thuc, So_cho) VALUES (?, ?, ?, ?, ?)',
+            [ma_lich, ma_tour, ngay_bat_dau, ngay_ket_thuc, so_cho]
+          );
+        }
       }
       
       await connection.commit();
@@ -386,7 +451,7 @@ class Tour {
       `;
     }
     
-    // Lấy thông tin lịch và tính số chỗ đã đặt
+    // Lấy thông tin lịch và tính số chỗ đã đặt, bao gồm thông tin HDV và đánh giá
     const [rows] = await pool.query(
       `SELECT 
          l.Ma_lich,
@@ -394,6 +459,10 @@ class Tour {
          l.Ngay_bat_dau,
          l.Ngay_ket_thuc,
          l.So_cho,
+         l.Ma_huong_dan_vien,
+         h.Ten_huong_dan_vien,
+         h.Ma_huong_dan_vien AS guide_id,
+         h.Anh_dai_dien AS guide_avatar,
          -- Số chỗ đã đặt (tính cả booking "Đã thanh toán" và "Chờ thanh toán" chưa hết hạn)
          COALESCE(SUM(
            CASE 
@@ -409,12 +478,36 @@ class Tour {
              THEN (b.So_nguoi_lon + b.So_tre_em)
              ELSE 0
            END
-         ), 0)) AS availableSeats
+         ), 0)) AS availableSeats,
+         -- Đánh giá trung bình của HDV (lấy từ bảng danh_gia, qua booking và schedule)
+         COALESCE((
+           SELECT AVG(d.Diem_huong_dan_vien)
+           FROM danh_gia d
+           LEFT JOIN Booking b2 ON d.Ma_booking = b2.Ma_booking
+           LEFT JOIN Chi_tiet_booking ctb2 ON b2.Ma_booking = ctb2.Ma_booking
+           LEFT JOIN Lich_khoi_hanh l2 ON ctb2.Ma_lich = l2.Ma_lich
+           WHERE (d.Ma_huong_dan_vien = l.Ma_huong_dan_vien OR l2.Ma_huong_dan_vien = l.Ma_huong_dan_vien)
+             AND d.Diem_huong_dan_vien IS NOT NULL
+             AND d.Diem_huong_dan_vien > 0
+         ), 0) AS guide_avg_rating,
+         -- Số lượng đánh giá của HDV (lấy từ bảng danh_gia)
+         COALESCE((
+           SELECT COUNT(DISTINCT d.Id_review)
+           FROM danh_gia d
+           LEFT JOIN Booking b2 ON d.Ma_booking = b2.Ma_booking
+           LEFT JOIN Chi_tiet_booking ctb2 ON b2.Ma_booking = ctb2.Ma_booking
+           LEFT JOIN Lich_khoi_hanh l2 ON ctb2.Ma_lich = l2.Ma_lich
+           WHERE (d.Ma_huong_dan_vien = l.Ma_huong_dan_vien OR l2.Ma_huong_dan_vien = l.Ma_huong_dan_vien)
+             AND d.Diem_huong_dan_vien IS NOT NULL
+             AND d.Diem_huong_dan_vien > 0
+         ), 0) AS guide_rating_count
        FROM Lich_khoi_hanh l
        LEFT JOIN Chi_tiet_booking cb ON cb.Ma_lich = l.Ma_lich
        LEFT JOIN Booking b ON b.Ma_booking = cb.Ma_booking
+       LEFT JOIN huong_dan_vien h ON l.Ma_huong_dan_vien = h.Ma_huong_dan_vien
        WHERE l.Ma_lich = ?
-       GROUP BY l.Ma_lich, l.Ma_tour, l.Ngay_bat_dau, l.Ngay_ket_thuc, l.So_cho`,
+       GROUP BY l.Ma_lich, l.Ma_tour, l.Ngay_bat_dau, l.Ngay_ket_thuc, l.So_cho, 
+                l.Ma_huong_dan_vien, h.Ten_huong_dan_vien, h.Ma_huong_dan_vien`,
       [lichId]
     );
     
@@ -428,7 +521,18 @@ class Tour {
    * @returns {Object} - Updated schedule
    */
   static async updateSchedule(lichId, scheduleData) {
-    const { ngay_bat_dau, ngay_ket_thuc, so_cho } = scheduleData;
+    const { ngay_bat_dau, ngay_ket_thuc, so_cho, ma_huong_dan_vien } = scheduleData;
+    
+    // Get current schedule to check dates
+    const currentSchedule = await this.getScheduleById(lichId);
+    if (!currentSchedule) {
+      throw new Error('Lịch khởi hành không tồn tại');
+    }
+    
+    // Use provided dates or current dates
+    const finalNgayBatDau = ngay_bat_dau || currentSchedule.Ngay_bat_dau;
+    const finalNgayKetThuc = ngay_ket_thuc || currentSchedule.Ngay_ket_thuc;
+    
     // Calculate total booked seats
     const [bookingRows] = await pool.query(
       `SELECT SUM(b.So_nguoi_lon + b.So_tre_em) AS bookedSeats
@@ -438,12 +542,77 @@ class Tour {
       [lichId]
     );
     const bookedSeats = bookingRows[0].bookedSeats || 0;
-    if (bookedSeats > so_cho) {
+    if (so_cho !== undefined && bookedSeats > so_cho) {
       throw new Error('Số chỗ mới nhỏ hơn số chỗ đã đặt');
     }
+    
+    // Kiểm tra trùng lịch nếu có cập nhật HDV hoặc ngày
+    if (ma_huong_dan_vien !== undefined && ma_huong_dan_vien !== null && ma_huong_dan_vien !== '') {
+      // Import Guide model để kiểm tra availability
+      const Guide = require('./guide.model');
+      const isAvailable = await Guide.isAvailable(
+        ma_huong_dan_vien,
+        finalNgayBatDau,
+        finalNgayKetThuc,
+        lichId // Exclude schedule hiện tại
+      );
+      
+      if (!isAvailable) {
+        // Lấy thông tin lịch trùng
+        const [conflictingSchedules] = await pool.query(
+          `SELECT Ma_lich, Ngay_bat_dau, Ngay_ket_thuc
+           FROM Lich_khoi_hanh
+           WHERE Ma_huong_dan_vien = ?
+             AND Ma_lich != ?
+             AND (
+               (Ngay_bat_dau >= ? AND Ngay_bat_dau <= ?)
+               OR (Ngay_ket_thuc >= ? AND Ngay_ket_thuc <= ?)
+               OR (Ngay_bat_dau <= ? AND Ngay_ket_thuc >= ?)
+             )
+           LIMIT 1`,
+          [ma_huong_dan_vien, lichId, finalNgayBatDau, finalNgayKetThuc, finalNgayBatDau, finalNgayKetThuc, finalNgayBatDau, finalNgayKetThuc]
+        );
+        
+        let errorMessage = 'Hướng dẫn viên đã có lịch trùng thời gian';
+        if (conflictingSchedules.length > 0) {
+          const conflict = conflictingSchedules[0];
+          errorMessage += ` (Lịch: ${conflict.Ma_lich}, từ ${conflict.Ngay_bat_dau} đến ${conflict.Ngay_ket_thuc})`;
+        }
+        
+        throw new Error(errorMessage);
+      }
+    }
+    
+    // Build update query dynamically based on provided fields
+    const updateFields = [];
+    const updateValues = [];
+    
+    if (ngay_bat_dau !== undefined) {
+      updateFields.push('Ngay_bat_dau = ?');
+      updateValues.push(ngay_bat_dau);
+    }
+    if (ngay_ket_thuc !== undefined) {
+      updateFields.push('Ngay_ket_thuc = ?');
+      updateValues.push(ngay_ket_thuc);
+    }
+    if (so_cho !== undefined) {
+      updateFields.push('So_cho = ?');
+      updateValues.push(so_cho);
+    }
+    if (ma_huong_dan_vien !== undefined) {
+      updateFields.push('Ma_huong_dan_vien = ?');
+      updateValues.push(ma_huong_dan_vien || null); // null để gỡ HDV
+    }
+    
+    if (updateFields.length === 0) {
+      return await this.getScheduleById(lichId);
+    }
+    
+    updateValues.push(lichId);
+    
     await pool.query(
-      'UPDATE lich_khoi_hanh SET Ngay_bat_dau = ?, Ngay_ket_thuc = ?, So_cho = ? WHERE Ma_lich = ?',
-      [ngay_bat_dau, ngay_ket_thuc, so_cho, lichId]
+      `UPDATE lich_khoi_hanh SET ${updateFields.join(', ')} WHERE Ma_lich = ?`,
+      updateValues
     );
     return await this.getScheduleById(lichId);
   }
@@ -453,15 +622,64 @@ class Tour {
    * @returns {Array} - List of schedules
    */
   static async getAllSchedules() {
+    // Kiểm tra xem có cột expires_at không
+    const [expiresAtColumn] = await pool.query(
+      `SELECT COLUMN_NAME 
+       FROM INFORMATION_SCHEMA.COLUMNS 
+       WHERE TABLE_SCHEMA = DATABASE() 
+         AND TABLE_NAME = 'Booking' 
+         AND COLUMN_NAME = 'expires_at'`
+    );
+    const hasExpiresAt = expiresAtColumn.length > 0;
+    
+    // Điều kiện tính booking
+    let bookingCondition;
+    if (hasExpiresAt) {
+      bookingCondition = `(
+        b.Trang_thai_booking = 'Đã thanh toán'
+        OR (
+          b.Trang_thai_booking = 'Chờ thanh toán'
+          AND (b.expires_at IS NULL OR b.expires_at > NOW())
+        )
+      )`;
+    } else {
+      bookingCondition = `(
+        b.Trang_thai_booking = 'Đã thanh toán'
+        OR (
+          b.Trang_thai_booking = 'Chờ thanh toán'
+          AND b.Ngay_dat > DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+        )
+      )`;
+    }
+    
     const [rows] = await pool.query(
-      `SELECT l.*, t.Tinh_trang AS tourStatus,
-              (SELECT SUM(b.So_nguoi_lon + b.So_tre_em)
-               FROM booking b
-               JOIN chi_tiet_booking cb ON b.Ma_booking = cb.Ma_booking
-               WHERE cb.Ma_lich = l.Ma_lich AND b.Trang_thai_booking = 'Đã thanh toán') AS bookedSeats
-       FROM lich_khoi_hanh l
-       JOIN tour_du_lich t ON l.Ma_tour = t.Ma_tour
-       WHERE t.Tinh_trang != 'Hủy'`
+      `SELECT l.*, 
+              t.Ten_tour,
+              t.Tinh_trang AS tourTinhTrang,
+              h.Ten_huong_dan_vien,
+              COALESCE((SELECT SUM(b.So_nguoi_lon + b.So_tre_em)
+                        FROM Booking b
+                        JOIN Chi_tiet_booking cb ON b.Ma_booking = cb.Ma_booking
+                        WHERE cb.Ma_lich = l.Ma_lich 
+                          AND ${bookingCondition}
+                          AND b.Trang_thai_booking NOT IN ('Da_huy', 'Hủy', 'Het_han')), 0) AS bookedSeats,
+              CASE 
+                WHEN CURDATE() > l.Ngay_ket_thuc THEN 'Đã diễn ra'
+                WHEN CURDATE() >= l.Ngay_bat_dau AND CURDATE() <= l.Ngay_ket_thuc THEN 'Đang diễn ra'
+                WHEN l.So_cho - COALESCE((SELECT SUM(b.So_nguoi_lon + b.So_tre_em)
+                                          FROM Booking b
+                                          JOIN Chi_tiet_booking cb ON b.Ma_booking = cb.Ma_booking
+                                          WHERE cb.Ma_lich = l.Ma_lich 
+                                            AND ${bookingCondition}
+                                            AND b.Trang_thai_booking NOT IN ('Da_huy', 'Hủy', 'Het_han')), 0) > 0 
+                THEN 'Còn chỗ'
+                ELSE 'Hết chỗ'
+              END AS tourStatus
+       FROM Lich_khoi_hanh l
+       JOIN Tour_du_lich t ON l.Ma_tour = t.Ma_tour
+       LEFT JOIN huong_dan_vien h ON l.Ma_huong_dan_vien = h.Ma_huong_dan_vien
+       WHERE t.Tinh_trang != 'Hủy'
+       ORDER BY l.Ngay_bat_dau DESC`
     );
     return rows;
   }

@@ -151,12 +151,12 @@ class MoMoController {
                             });
                             console.log(`✅ MoMo payment info updated for booking ${bookingId}`);
 
-                            // Redirect to success page
-                            res.redirect(`/payment-success.html?bookingId=${bookingId}&method=MoMo&amount=${amount}`);
+                            // Redirect to home page with success message
+                            res.redirect(`/index.html?payment=success&bookingId=${bookingId}&method=MoMo`);
                         } catch (updateError) {
                             console.error('❌ Error updating booking:', updateError);
-                            // Vẫn redirect đến success page vì payment đã thành công
-                            res.redirect(`/payment-success.html?bookingId=${bookingId}&method=MoMo&amount=${amount}&warning=update_failed`);
+                            // Vẫn redirect về trang chủ vì payment đã thành công
+                            res.redirect(`/index.html?payment=success&bookingId=${bookingId}&method=MoMo&warning=update_failed`);
                         }
                     } else {
                         // Payment verification failed
@@ -176,7 +176,7 @@ class MoMoController {
                                 MoMo_amount: amount
                             });
                             console.log(`✅ Booking ${bookingId} updated despite verification error`);
-                            res.redirect(`/payment-success.html?bookingId=${bookingId}&method=MoMo&amount=${amount}&warning=verification_skipped`);
+                            res.redirect(`/index.html?payment=success&bookingId=${bookingId}&method=MoMo&warning=verification_skipped`);
                         } catch (updateError) {
                             console.error('❌ Failed to update booking:', updateError);
                             res.redirect(`/payment-failed.html?error=verification_error&orderId=${orderId}`);
@@ -290,34 +290,138 @@ class MoMoController {
                 console.log(`📊 Payment details: transId=${transId}, amount=${amount}, orderId=${orderId}`);
 
                 try {
-                    // Update booking status (sử dụng validation service)
-                    console.log(`🔄 Updating booking ${bookingId} status to "Đã thanh toán"...`);
-                    await BookingValidationService.confirmPayment(bookingId, 'MoMo');
-                    console.log(`✅ Booking ${bookingId} status updated to "Đã thanh toán"`);
+                    const pool = require('../config/database');
+                    const connection = await pool.getConnection();
                     
-                    // Cập nhật thông tin MoMo
-                    console.log(`🔄 Updating MoMo payment info for booking ${bookingId}...`);
-                    await Booking.updatePaymentStatus(bookingId, {
-                        MoMo_trans_id: transId,
-                        MoMo_amount: amount
-                    });
-                    console.log(`✅ MoMo payment info updated for booking ${bookingId}`);
+                    try {
+                        await connection.beginTransaction();
+                        
+                        // 1. Update booking status (sử dụng validation service với connection)
+                        console.log(`🔄 Updating booking ${bookingId} status to "Đã thanh toán"...`);
+                        await BookingValidationService.confirmPayment(bookingId, 'MoMo', connection);
+                        console.log(`✅ Booking ${bookingId} status updated to "Đã thanh toán"`);
+                        
+                        // 2. Cập nhật thông tin MoMo (sử dụng connection từ transaction)
+                        console.log(`🔄 Updating MoMo payment info for booking ${bookingId}...`);
+                        await Booking.updatePaymentStatus(bookingId, {
+                            MoMo_trans_id: transId,
+                            MoMo_amount: amount
+                        }, connection);
+                        console.log(`✅ MoMo payment info updated for booking ${bookingId}`);
 
-                    // Verify booking was updated
-                    const updatedBooking = await Booking.getById(bookingId);
-                    if (updatedBooking && updatedBooking.Trang_thai_booking === 'Đã thanh toán') {
-                        console.log(`✅ Verified: Booking ${bookingId} is now "Đã thanh toán"`);
-                    } else {
-                        console.error(`❌ WARNING: Booking ${bookingId} status may not have been updated correctly`);
-                        console.error(`📊 Current status: ${updatedBooking?.Trang_thai_booking || 'unknown'}`);
+                        // 3. Lấy thông tin booking để tạo vé và hóa đơn
+                        const [bookings] = await connection.query(`
+                            SELECT 
+                                b.*,
+                                ctb.Ma_lich,
+                                t.Gia_nguoi_lon,
+                                t.Gia_tre_em
+                            FROM Booking b
+                            JOIN Chi_tiet_booking ctb ON b.Ma_booking = ctb.Ma_booking
+                            JOIN Lich_khoi_hanh lkh ON ctb.Ma_lich = lkh.Ma_lich
+                            JOIN Tour_du_lich t ON lkh.Ma_tour = t.Ma_tour
+                            WHERE b.Ma_booking = ?
+                        `, [bookingId]);
+
+                        if (bookings.length === 0) {
+                            throw new Error('Không tìm thấy booking');
+                        }
+
+                        const booking = bookings[0];
+                        const soNguoiLon = parseInt(booking.So_nguoi_lon) || 0;
+                        const soTreEm = parseInt(booking.So_tre_em) || 0;
+                        const tongNguoi = soNguoiLon + soTreEm;
+                        const giaNguoiLon = parseFloat(booking.Gia_nguoi_lon) || 0;
+                        const giaTreEm = parseFloat(booking.Gia_tre_em) || 0;
+                        const maLich = booking.Ma_lich;
+
+                        // 4. Kiểm tra xem đã có hóa đơn chưa
+                        const [existingInvoices] = await connection.query(`
+                            SELECT Ma_hoa_don FROM Hoa_don WHERE Ma_booking = ?
+                        `, [bookingId]);
+
+                        // 5. Tạo hóa đơn nếu chưa có
+                        if (existingInvoices.length === 0) {
+                            const maHoaDon = `HD${Date.now().toString().slice(-8)}`;
+                            await connection.query(`
+                                INSERT INTO Hoa_don (Ma_hoa_don, Ma_booking, Ngay_lap, Tong_tien, Trang_thai_hoa_don)
+                                VALUES (?, ?, NOW(), ?, 'Đã thanh toán')
+                            `, [maHoaDon, bookingId, booking.Tong_tien]);
+                            console.log(`📄 Đã tạo hóa đơn: ${maHoaDon}`);
+                        } else {
+                            console.log(`📄 Hóa đơn đã tồn tại: ${existingInvoices[0].Ma_hoa_don}`);
+                        }
+
+                        // 6. Kiểm tra xem đã có vé chưa
+                        const [existingTickets] = await connection.query(`
+                            SELECT So_ve FROM Ve WHERE Ma_booking = ?
+                        `, [bookingId]);
+
+                        // 7. Tạo vé nếu chưa có
+                        if (existingTickets.length === 0 && tongNguoi > 0) {
+                            // Tạo vé cho người lớn
+                            for (let i = 1; i <= soNguoiLon; i++) {
+                                const soVe = `VE${Date.now()}${i}`;
+                                await connection.query(`
+                                    INSERT INTO Ve (So_ve, Ma_booking, Ma_lich, Gia_ve, Trang_thai_ve)
+                                    VALUES (?, ?, ?, ?, 'Chua_su_dung')
+                                `, [soVe, bookingId, maLich, giaNguoiLon]);
+                            }
+
+                            // Tạo vé cho trẻ em
+                            for (let i = 1; i <= soTreEm; i++) {
+                                const soVe = `VE${Date.now()}${soNguoiLon + i}`;
+                                await connection.query(`
+                                    INSERT INTO Ve (So_ve, Ma_booking, Ma_lich, Gia_ve, Trang_thai_ve)
+                                    VALUES (?, ?, ?, ?, 'Chua_su_dung')
+                                `, [soVe, bookingId, maLich, giaTreEm]);
+                            }
+
+                            console.log(`🎫 Đã tạo ${tongNguoi} vé (${soNguoiLon} người lớn + ${soTreEm} trẻ em)`);
+                        } else {
+                            console.log(`🎫 Đã có ${existingTickets.length} vé cho booking này`);
+                        }
+
+                        // 8. Tạo bản ghi checkout nếu chưa có
+                        const [existingCheckouts] = await connection.query(`
+                            SELECT ID_checkout FROM Checkout WHERE Ma_booking = ?
+                        `, [bookingId]);
+
+                        if (existingCheckouts.length === 0) {
+                            const checkoutId = `CO${Date.now().toString().slice(-8)}`;
+                            await connection.query(`
+                                INSERT INTO Checkout (ID_checkout, Ma_booking, Phuong_thuc_thanh_toan, Ngay_tra, So_tien, Trang_thai)
+                                VALUES (?, ?, 'MoMo', NOW(), ?, 'Thành công')
+                            `, [checkoutId, bookingId, booking.Tong_tien]);
+                            console.log(`💳 Đã tạo bản ghi checkout: ${checkoutId}`);
+                        } else {
+                            console.log(`💳 Bản ghi checkout đã tồn tại: ${existingCheckouts[0].ID_checkout}`);
+                        }
+
+                        await connection.commit();
+                        console.log(`✅ Transaction committed successfully for booking ${bookingId}`);
+
+                        // Verify booking was updated
+                        const updatedBooking = await Booking.getById(bookingId);
+                        if (updatedBooking && updatedBooking.Trang_thai_booking === 'Đã thanh toán') {
+                            console.log(`✅ Verified: Booking ${bookingId} is now "Đã thanh toán"`);
+                        } else {
+                            console.error(`❌ WARNING: Booking ${bookingId} status may not have been updated correctly`);
+                            console.error(`📊 Current status: ${updatedBooking?.Trang_thai_booking || 'unknown'}`);
+                        }
+
+                        console.log(`✅ Booking ${bookingId} payment confirmed via MoMo IPN`);
+
+                        res.status(200).json({
+                            status: 'success',
+                            message: 'Payment confirmed'
+                        });
+                    } catch (transactionError) {
+                        await connection.rollback();
+                        throw transactionError;
+                    } finally {
+                        connection.release();
                     }
-
-                    console.log(`✅ Booking ${bookingId} payment confirmed via MoMo IPN`);
-
-                    res.status(200).json({
-                        status: 'success',
-                        message: 'Payment confirmed'
-                    });
                 } catch (paymentError) {
                     console.error('❌ Error processing payment confirmation:', paymentError);
                     console.error('❌ Error stack:', paymentError.stack);

@@ -149,9 +149,15 @@ if (loginForm) {
                     console.log('Role comparison from auth.js:', user.loai_tai_khoan === 'Admin');
                     console.log('Role type:', typeof user.loai_tai_khoan);
                     console.log('Role length:', user.loai_tai_khoan ? user.loai_tai_khoan.length : 'undefined');
-                    if (user.loai_tai_khoan === 'Admin') {
+                    
+                    const userRole = user.loai_tai_khoan || user.role;
+                    
+                    if (userRole === 'Admin') {
                         console.log('Redirecting to admin page from auth.js');
                         window.location.href = '/admin.html';
+                    } else if (userRole === 'Huong_dan_vien') {
+                        console.log('Redirecting to guide page from auth.js');
+                        window.location.href = '/guide.html';
                     } else {
                         console.log('Redirecting to home page from auth.js');
                         // Thiết lập biến để hiển thị thông báo chào mừng sau khi chuyển trang

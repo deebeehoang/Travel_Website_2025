@@ -22,6 +22,12 @@
         .destination-item {
             margin-bottom: 1rem;
         }
+        .itinerary-day-card {
+            border-left: 4px solid #007bff;
+        }
+        .itinerary-day-card .card-header {
+            background-color: #f8f9fa !important;
+        }
     </style>
 </head>
 <body>
@@ -101,13 +107,100 @@
 
             <!-- Mô Tả Chi Tiết -->
             <div class="form-section">
-                <h4>4. Mô Tả Lịch Trình Chi Tiết</h4>
+                <h4>4. Mô Tả Tour</h4>
                 <textarea id="mo_ta" name="mo_ta" class="form-control"></textarea>
+            </div>
+
+            <!-- Quản lý Lịch trình Chi Tiết theo Lịch Khởi Hành -->
+            <div class="form-section">
+                <h4>5. Quản lý Lịch trình Chi Tiết</h4>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Lưu ý:</strong> Bạn phải chọn lịch khởi hành trước khi quản lý lịch trình.
+                </div>
+                
+                <!-- Chọn Lịch Khởi Hành -->
+                <div class="mb-3">
+                    <label class="form-label"><strong>Chọn Lịch Khởi Hành:</strong></label>
+                    <select class="form-select" id="selectScheduleForItinerary" required>
+                        <option value="">-- Chọn lịch khởi hành --</option>
+                    </select>
+                    <small class="text-muted">Vui lòng chọn một lịch khởi hành từ danh sách ở trên (Section 3)</small>
+                </div>
+
+                <!-- Form Thêm/Sửa Lịch trình -->
+                <div id="itineraryFormContainer" style="display: none;">
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0" id="itineraryFormTitle">
+                                <i class="fas fa-plus-circle me-2"></i>Thêm Lịch trình Mới
+                            </h6>
+                            <button type="button" class="btn btn-sm btn-light" id="btnAddNewDay" onclick="resetItineraryForm()" style="display: none;">
+                                <i class="fas fa-plus me-1"></i>Thêm ngày mới
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <form id="itineraryForm" onsubmit="return false;" data-form-type="itinerary">
+                                <input type="hidden" id="itineraryEditId" value="">
+                                
+                                <div class="row">
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label"><strong>Ngày thứ <span class="text-danger">*</span></strong></label>
+                                        <input type="number" class="form-control" id="itineraryNgayThu" 
+                                               min="1" required placeholder="VD: 1, 2, 3...">
+                                        <small class="text-muted" id="maxDayHint"></small>
+                                    </div>
+                                    <div class="col-md-9 mb-3">
+                                        <label class="form-label"><strong>Tiêu đề <span class="text-danger">*</span></strong></label>
+                                        <input type="text" class="form-control" id="itineraryTieuDe" 
+                                               required placeholder="Nhập tiêu đề hoạt động...">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label"><strong>Thời gian hoạt động</strong></label>
+                                        <input type="text" class="form-control" id="itineraryThoiGian" 
+                                               placeholder="VD: 08:00 - 12:00">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label"><strong>Địa điểm</strong></label>
+                                        <input type="text" class="form-control" id="itineraryDiaDiem" 
+                                               placeholder="Nhập địa điểm...">
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label"><strong>Mô tả</strong></label>
+                                    <textarea class="form-control" id="itineraryMoTa" rows="4" 
+                                              placeholder="Nhập mô tả chi tiết cho ngày này..."></textarea>
+                                </div>
+
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-secondary" id="btnCancelItinerary" onclick="cancelItineraryForm()">
+                                        <i class="fas fa-times me-1"></i>Hủy
+                                    </button>
+                                    <button type="button" class="btn btn-primary" id="btnSaveItinerary" onclick="handleItinerarySubmit(event)">
+                                        <i class="fas fa-save me-1"></i>Lưu
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Danh sách Lịch trình -->
+                <div id="itineraryListContainer">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Vui lòng chọn lịch khởi hành để xem và quản lý lịch trình.
+                    </div>
+                </div>
             </div>
 
             <!-- Khuyến mãi theo Tour -->
             <div class="form-section">
-                <h4>5. Khuyến mãi của Tour</h4>
+                <h4>6. Khuyến mãi của Tour</h4>
                 <div class="row g-3 align-items-end">
                     <div class="col-md-3">
                         <label class="form-label">Mã coupon (Ma_km)</label>
