@@ -5,6 +5,8 @@ const { authenticateToken, isAdmin } = require('../middlewares/auth.middleware')
 
 // Admin-only ticket routes
 router.get('/', authenticateToken, isAdmin, TicketController.getAllTickets);
+// Route này phải đặt trước /:id để tránh conflict
+router.post('/auto-update-expired', authenticateToken, isAdmin, TicketController.autoUpdateExpiredTickets);
 router.get('/:id', authenticateToken, isAdmin, TicketController.getTicketById);
 router.delete('/:id', authenticateToken, isAdmin, TicketController.deleteTicket);
 router.put('/:id', authenticateToken, isAdmin, TicketController.updateTicket);

@@ -1,5 +1,6 @@
 const cron = require('node-cron');
 const BookingCleanupService = require('./booking-cleanup.service');
+const Ticket = require('../models/ticket.model');
 
 /**
  * Service quản lý các cron job
@@ -49,6 +50,36 @@ class CronService {
     });
 
     console.log('✅ [CRON] Đã đăng ký job cập nhật trạng thái lịch khởi hành (chạy mỗi ngày lúc 00:00)');
+
+    // Cron job: Tự động cập nhật trạng thái vé đã hết hạn mỗi ngày lúc 01:00
+    // Format: 0 1 * * * (01:00 mỗi ngày)
+    cron.schedule('0 1 * * *', async () => {
+      try {
+        console.log('🎫 [CRON] Chạy job tự động cập nhật trạng thái vé đã hết hạn...');
+        const result = await Ticket.autoUpdateExpiredTickets();
+        console.log(`✅ [CRON] Đã cập nhật ${result.updated} vé từ "Chưa sử dụng" thành "Đã sử dụng"`);
+      } catch (error) {
+        console.error('❌ [CRON] Lỗi khi chạy job tự động cập nhật trạng thái vé:', error);
+      }
+    });
+
+    console.log('✅ [CRON] Đã đăng ký job tự động cập nhật trạng thái vé (chạy mỗi ngày lúc 01:00)');
+
+    // Chạy ngay khi server khởi động để cập nhật vé đã hết hạn
+    // (Chỉ chạy một lần khi server start, không phải cron job)
+    setTimeout(async () => {
+      try {
+        console.log('🎫 [STARTUP] Chạy job tự động cập nhật trạng thái vé khi server khởi động...');
+        const result = await Ticket.autoUpdateExpiredTickets();
+        if (result.updated > 0) {
+          console.log(`✅ [STARTUP] Đã cập nhật ${result.updated} vé từ "Chưa sử dụng" thành "Đã sử dụng" khi khởi động server`);
+        } else {
+          console.log('✅ [STARTUP] Không có vé nào cần cập nhật khi khởi động server');
+        }
+      } catch (error) {
+        console.error('❌ [STARTUP] Lỗi khi chạy job tự động cập nhật trạng thái vé khi khởi động:', error);
+      }
+    }, 5000); // Chạy sau 5 giây khi server khởi động
 
     console.log('🎉 [CRON] Tất cả cron jobs đã được khởi động thành công!');
   }

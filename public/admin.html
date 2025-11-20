@@ -96,6 +96,9 @@
                         <a class="nav-link" href="#schedules" id="navSchedules">
                             <i class="fas fa-calendar-alt"></i> Quản lý Lịch khởi hành
                         </a>
+                        <a class="nav-link" href="#guides" id="navGuides">
+                            <i class="fas fa-user-tie"></i> Quản lý Hướng dẫn viên
+                        </a>
                         <a class="nav-link" href="#users" id="navUsers">
                             <i class="fas fa-users"></i> Quản lý người dùng
                         </a>
@@ -526,6 +529,88 @@
                         </div>
 
                         <!-- Payment Success Modal -->
+                        <!-- Modal Thêm/Sửa Hướng dẫn viên -->
+                        <div class="modal fade" id="guideModal" tabindex="-1" aria-labelledby="guideModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="guideModalLabel">Thêm Hướng dẫn viên mới</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <form id="guideForm">
+                                        <div class="modal-body">
+                                            <input type="hidden" id="guideMaHuongDanVien">
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">Email *</label>
+                                                    <input type="email" class="form-control" id="guideEmail" required>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">Mật khẩu <span id="guidePasswordLabel">*</span></label>
+                                                    <input type="password" class="form-control" id="guidePassword">
+                                                    <small class="text-muted" id="guidePasswordHint">Để trống nếu không đổi mật khẩu</small>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">Tên hướng dẫn viên *</label>
+                                                    <input type="text" class="form-control" id="guideTen" required>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">Ngày sinh *</label>
+                                                    <input type="date" class="form-control" id="guideNgaySinh" required>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">Giới tính *</label>
+                                                    <select class="form-select" id="guideGioiTinh" required>
+                                                        <option value="Nam">Nam</option>
+                                                        <option value="Nữ">Nữ</option>
+                                                        <option value="Khác">Khác</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">Số điện thoại *</label>
+                                                    <input type="tel" class="form-control" id="guideSoDienThoai" required>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">CCCD *</label>
+                                                    <input type="text" class="form-control" id="guideCccd" required>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">Trạng thái *</label>
+                                                    <select class="form-select" id="guideTrangThai" required>
+                                                        <option value="Hoat_dong">Đang hoạt động</option>
+                                                        <option value="Nghi_phep">Nghỉ phép</option>
+                                                        <option value="Nghi_viec">Nghỉ việc</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Địa chỉ</label>
+                                                <input type="text" class="form-control" id="guideDiaChi">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Ngôn ngữ</label>
+                                                <input type="text" class="form-control" id="guideNgonNgu" placeholder="VD: Tiếng Việt, English, 中文">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Kinh nghiệm</label>
+                                                <textarea class="form-control" id="guideKinhNghiem" rows="3"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                            <button type="submit" class="btn btn-primary">Lưu</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="modal fade" id="paymentSuccessModal" tabindex="-1" aria-labelledby="paymentSuccessModalLabel" aria-hidden="true">
                             <div class="modal-dialog modal-lg">
                                 <div class="modal-content">
@@ -584,56 +669,183 @@
 
                         <!-- Schedules Section -->
                         <div id="schedulesSection" class="content-section">
-                            <div class="row mb-3">
-                                <div class="col-md-6"><h3></h3></div>
-                                <div class="col-md-6 text-end">
+                            <div class="section-header">
+                                <h3>Quản lý Lịch khởi hành</h3>
+                                <div class="section-actions">
                                     <button class="btn btn-add" id="addScheduleBtn">
                                         <i class="fas fa-calendar-plus"></i> Thêm Lịch mới
                                     </button>
                                 </div>
                             </div>
-                            <div id="scheduleFormContainer" class="mb-4" style="display:none;">
-                                <h4 id="scheduleFormTitle">Thêm Lịch khởi hành</h4>
-                                <form id="scheduleForm">
-                                    <div class="row">
-                                        <div class="col-md-4 mb-3">
-                                            <label for="scheduleId" class="form-label">Mã Lịch</label>
-                                            <input type="text" class="form-control" id="scheduleId" required>
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label for="scheduleTourId" class="form-label">Mã Tour</label>
-                                            <input type="text" class="form-control" id="scheduleTourId" required>
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label for="scheduleSeats" class="form-label">Số chỗ</label>
-                                            <input type="number" class="form-control" id="scheduleSeats" required>
-                                        </div>
+                            
+                            <!-- Filter and Search -->
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <select class="form-select" id="scheduleStatusFilter">
+                                        <option value="all">Tất cả trạng thái</option>
+                                        <option value="Còn chỗ">Còn chỗ</option>
+                                        <option value="Hết chỗ">Hết chỗ</option>
+                                        <option value="Đang diễn ra">Đang diễn ra</option>
+                                        <option value="Đã diễn ra">Đã diễn ra</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="date" class="form-control" id="scheduleDateFrom" placeholder="Từ ngày">
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="date" class="form-control" id="scheduleDateTo" placeholder="Đến ngày">
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="search-box">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" class="form-control" placeholder="Tìm kiếm..." id="scheduleSearchInput">
                                     </div>
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label for="scheduleStart" class="form-label">Ngày bắt đầu</label>
-                                            <input type="date" class="form-control" id="scheduleStart" required>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label for="scheduleEnd" class="form-label">Ngày kết thúc</label>
-                                            <input type="date" class="form-control" id="scheduleEnd" required>
-                                        </div>
-                                    </div>
-                                    <div class="text-end">
-                                        <button type="button" class="btn btn-secondary me-2" id="cancelScheduleBtn">Hủy</button>
-                                        <button type="submit" class="btn btn-primary">Lưu</button>
-                                    </div>
-                                </form>
+                                </div>
                             </div>
+                            
+                            <!-- Form Container -->
+                            <div id="scheduleFormContainer" class="card mb-4" style="display:none;">
+                                <div class="card-header">
+                                    <h5 class="mb-0" id="scheduleFormTitle">Thêm Lịch khởi hành</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="scheduleForm">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="scheduleTourId" class="form-label">
+                                                    Chọn Tour <span class="text-danger">*</span>
+                                                </label>
+                                                <select class="form-select" id="scheduleTourId" required>
+                                                    <option value="">-- Chọn Tour --</option>
+                                                </select>
+                                                <small class="form-text text-muted" id="tourInfo"></small>
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label for="scheduleSeats" class="form-label">
+                                                    Số chỗ <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="number" class="form-control" id="scheduleSeats" min="1" required>
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label for="scheduleId" class="form-label">Mã Lịch</label>
+                                                <input type="text" class="form-control" id="scheduleId" readonly>
+                                                <small class="form-text text-muted">Tự động tạo</small>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="scheduleStart" class="form-label">
+                                                    Ngày bắt đầu <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="date" class="form-control" id="scheduleStart" required onchange="validateScheduleDates()">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="scheduleEnd" class="form-label">
+                                                    Ngày kết thúc <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="date" class="form-control" id="scheduleEnd" required onchange="validateScheduleDates()">
+                                                <div class="invalid-feedback d-block" id="scheduleDateError" style="display: none; color: #dc3545; font-size: 0.875rem; margin-top: 0.25rem;">
+                                                    <i class="fas fa-exclamation-circle"></i> Ngày kết thúc phải sau ngày bắt đầu
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-10 mb-3">
+                                                <label for="scheduleGuide" class="form-label">Hướng dẫn viên (tùy chọn)</label>
+                                                <select class="form-select" id="scheduleGuide">
+                                                    <option value="">-- Chọn HDV --</option>
+                                                </select>
+                                                <small class="form-text text-muted" id="guideInfo">Chọn ngày để xem HDV rảnh</small>
+                                            </div>
+                                            <div class="col-md-2 mb-3 d-flex align-items-end">
+                                                <button type="button" class="btn btn-outline-danger w-100" id="removeGuideBtn" onclick="removeGuideFromScheduleForm()" style="display: none;" title="Gỡ HDV khỏi lịch này">
+                                                    <i class="fas fa-times"></i> Gỡ HDV
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <button type="button" class="btn btn-secondary me-2" id="cancelScheduleBtn">Hủy</button>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save"></i> Lưu
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            
+                            <!-- Table -->
                             <div class="table-responsive">
                                 <table class="table table-striped table-hover">
                                     <thead class="table-dark">
                                         <tr>
-                                            <th>Mã Lịch</th><th>Mã Tour</th><th>Ngày BD</th><th>Ngày KT</th><th>Số chỗ</th><th>Đã đặt</th><th>Tour Status</th><th>Thao tác</th>
+                                            <th>Mã Lịch</th>
+                                            <th>Tên Tour</th>
+                                            <th>Ngày BD</th>
+                                            <th>Ngày KT</th>
+                                            <th>Số chỗ</th>
+                                            <th>Đã đặt</th>
+                                            <th>Còn lại</th>
+                                            <th>Hướng dẫn viên</th>
+                                            <th>Trạng thái</th>
+                                            <th>Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody id="schedulesList">
-                                        <!-- Schedule items will be loaded here -->
+                                        <tr><td colspan="10" class="text-center">Đang tải dữ liệu...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Guides Section - Quản lý Hướng dẫn viên -->
+                        <div id="guidesSection" class="content-section">
+                            <div class="section-header">
+                                <h3>Quản lý Hướng dẫn viên</h3>
+                                <div class="section-actions">
+                                    <button class="btn btn-refresh" id="refreshGuidesBtn">
+                                        <i class="fas fa-sync"></i> Tải lại
+                                    </button>
+                                    <button class="btn btn-add" id="addGuideBtn">
+                                        <i class="fas fa-plus"></i> Thêm HDV mới
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Filter và Search -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <select class="form-select" id="guideStatusFilter">
+                                        <option value="all">Tất cả</option>
+                                        <option value="Hoat_dong">Đang hoạt động</option>
+                                        <option value="Nghi_phep">Nghỉ phép</option>
+                                        <option value="Nghi_viec">Nghỉ việc</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="search-box">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" class="form-control" placeholder="Tìm kiếm theo tên, SĐT, email..." id="guideSearchInput">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Table -->
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Mã HDV</th>
+                                            <th>Tên</th>
+                                            <th>SĐT</th>
+                                            <th>Email</th>
+                                            <th>Trạng thái</th>
+                                            <th>Số tour</th>
+                                            <th>Đánh giá TB</th>
+                                            <th>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="guidesList">
+                                        <!-- Guide items will be loaded here -->
                                     </tbody>
                                 </table>
                             </div>
@@ -1443,6 +1655,7 @@
     <script src="js/config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/admin/admin.js"></script>
+    <script src="js/admin/admin-itinerary.js"></script>
     <!-- Custom scripts -->
     <script src="js/admin/admindashboard.js"></script>
     <script src="js/admin/adminticket.js"></script>
@@ -1992,6 +2205,40 @@ document.addEventListener('DOMContentLoaded', function() {
                     <a href="#" id="viewBookingLink" class="btn btn-primary" target="_blank">
                         <i class="fas fa-external-link-alt me-2"></i>Xem chi tiết đầy đủ
                     </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Quản lý Lịch trình Tour -->
+    <div class="modal fade" id="itineraryModal" tabindex="-1" aria-labelledby="itineraryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="itineraryModalLabel">
+                        <i class="fas fa-route me-2"></i>Quản lý Lịch trình Tour
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h6 id="itineraryTourName"></h6>
+                        <p class="text-muted mb-3">Số ngày: <span id="itineraryTourDays"></span></p>
+                        <div class="d-flex gap-2 mb-3">
+                            <button class="btn btn-success btn-sm" onclick="generateItineraryDays()">
+                                <i class="fas fa-magic me-1"></i>Tự động tạo ngày
+                            </button>
+                            <button class="btn btn-primary btn-sm" onclick="addItineraryDay()">
+                                <i class="fas fa-plus me-1"></i>Thêm ngày mới
+                            </button>
+                        </div>
+                    </div>
+                    <div id="itineraryListContainer">
+                        <!-- Danh sách các ngày sẽ được load ở đây -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
                 </div>
             </div>
         </div>

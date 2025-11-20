@@ -415,30 +415,174 @@ static async getAll(filters = {}) {
    * @returns {Object} - Booking details
    */
   static async getBookingDetails(bookingId) {
-    const bookingTableName = await Booking.getBookingTableName();
-    const [bookingRows] = await pool.query(
-      `SELECT b.*, k.Ten_khach_hang, k.Cccd, k.Dia_chi, k.Ngay_sinh, k.Gioi_tinh,
-              t.Id_user, t.Email as Email_tai_khoan
-       FROM \`${bookingTableName}\` b
-       JOIN Khach_hang k ON b.Ma_khach_hang = k.Ma_khach_hang
-       JOIN Tai_khoan t ON b.Id_user = t.Id_user
-       WHERE b.Ma_booking = ?`,
-      [bookingId]
-    );
+    try {
+      const bookingTableName = await Booking.getBookingTableName();
+      
+      const [bookingRows] = await pool.query(
+        `SELECT b.*, k.Ten_khach_hang, k.Cccd, k.Dia_chi, k.Ngay_sinh, k.Gioi_tinh,
+                COALESCE(b.Id_user, k.Id_user) as Id_user,
+                t.Email as Email_tai_khoan
+         FROM \`${bookingTableName}\` b
+         JOIN Khach_hang k ON b.Ma_khach_hang = k.Ma_khach_hang
+         LEFT JOIN Tai_khoan t ON (COALESCE(b.Id_user, k.Id_user) = t.Id_user)
+         WHERE b.Ma_booking = ?`,
+        [bookingId]
+      );
     
     if (bookingRows.length === 0) {
       return null;
     }
     
-    // Get tour details
+    // Get tour details with schedule and guide information
     const [tourRows] = await pool.query(
-      `SELECT t.*, l.Ngay_bat_dau, l.Ngay_ket_thuc
+      `SELECT 
+         t.*, 
+         l.Ma_lich,
+         l.Ngay_bat_dau, 
+         l.Ngay_ket_thuc,
+         l.So_cho,
+         l.Ma_huong_dan_vien,
+         h.Ten_huong_dan_vien,
+         h.Anh_dai_dien AS guide_avatar,
+         h.So_dien_thoai AS guide_phone,
+         h.Ngon_ngu AS guide_languages,
+         h.Kinh_nghiem AS guide_experience,
+         COALESCE((
+           SELECT AVG(d.Diem_huong_dan_vien)
+           FROM danh_gia d
+           LEFT JOIN Booking b2 ON d.Ma_booking = b2.Ma_booking
+           LEFT JOIN Chi_tiet_booking ctb2 ON b2.Ma_booking = ctb2.Ma_booking
+           LEFT JOIN Lich_khoi_hanh l2 ON ctb2.Ma_lich = l2.Ma_lich
+           WHERE (d.Ma_huong_dan_vien = l.Ma_huong_dan_vien OR l2.Ma_huong_dan_vien = l.Ma_huong_dan_vien)
+             AND d.Diem_huong_dan_vien IS NOT NULL
+             AND d.Diem_huong_dan_vien > 0
+         ), 0) AS guide_avg_rating,
+         COALESCE((
+           SELECT COUNT(DISTINCT d.Id_review)
+           FROM danh_gia d
+           LEFT JOIN Booking b2 ON d.Ma_booking = b2.Ma_booking
+           LEFT JOIN Chi_tiet_booking ctb2 ON b2.Ma_booking = ctb2.Ma_booking
+           LEFT JOIN Lich_khoi_hanh l2 ON ctb2.Ma_lich = l2.Ma_lich
+           WHERE (d.Ma_huong_dan_vien = l.Ma_huong_dan_vien OR l2.Ma_huong_dan_vien = l.Ma_huong_dan_vien)
+             AND d.Diem_huong_dan_vien IS NOT NULL
+             AND d.Diem_huong_dan_vien > 0
+         ), 0) AS guide_rating_count
        FROM Tour_du_lich t
        JOIN Lich_khoi_hanh l ON t.Ma_tour = l.Ma_tour
        JOIN Chi_tiet_booking cb ON l.Ma_lich = cb.Ma_lich
+       LEFT JOIN huong_dan_vien h ON l.Ma_huong_dan_vien = h.Ma_huong_dan_vien
        WHERE cb.Ma_booking = ?`,
       [bookingId]
     );
+    
+    // Get itinerary/schedule details từ bảng tour_itinerary
+    // Ưu tiên lấy lịch trình theo Ma_lich của booking, nếu không có thì lấy lịch trình tour chung
+    let itinerary = null;
+    if (tourRows.length > 0 && tourRows[0].Ma_tour) {
+      try {
+        const maLich = tourRows[0].Ma_lich; // Lấy Ma_lich từ schedule của booking
+        const maTour = tourRows[0].Ma_tour;
+        
+        console.log(`🔍 [BOOKING] Getting itinerary for booking ${bookingId}`);
+        console.log(`🔍 [BOOKING] Ma_tour: ${maTour}, Ma_lich: ${maLich}`);
+        
+        // Kiểm tra xem cột Ma_lich có tồn tại trong bảng tour_itinerary không
+        const [columnCheck] = await pool.query(
+          `SELECT COLUMN_NAME 
+           FROM INFORMATION_SCHEMA.COLUMNS 
+           WHERE TABLE_SCHEMA = DATABASE() 
+             AND TABLE_NAME = 'tour_itinerary' 
+             AND COLUMN_NAME = 'Ma_lich'`
+        );
+        
+        const hasMaLichColumn = columnCheck.length > 0;
+        console.log(`🔍 [BOOKING] Has Ma_lich column: ${hasMaLichColumn}`);
+        
+        let itineraryRows = [];
+        
+        if (hasMaLichColumn && maLich) {
+          // Ưu tiên: Lấy lịch trình theo Ma_lich (lịch trình cụ thể cho lịch khởi hành này)
+          console.log(`🔍 [BOOKING] Querying itinerary for Ma_tour=${maTour} AND Ma_lich=${maLich}`);
+          const [scheduleItineraryRows] = await pool.query(
+            `SELECT * FROM tour_itinerary 
+             WHERE Ma_tour = ? AND Ma_lich = ? 
+             ORDER BY Ngay_thu ASC`,
+            [maTour, maLich]
+          );
+          
+          console.log(`🔍 [BOOKING] Found ${scheduleItineraryRows.length} itinerary items for schedule ${maLich}`);
+          
+          if (scheduleItineraryRows.length > 0) {
+            itineraryRows = scheduleItineraryRows;
+            console.log(`✅ [BOOKING] Loaded ${itineraryRows.length} itinerary items for schedule ${maLich}`);
+          } else {
+            // Fallback: Lấy lịch trình tour chung (Ma_lich IS NULL)
+            console.log(`⚠️ [BOOKING] No schedule-specific itinerary found, trying general tour itinerary...`);
+            const [tourItineraryRows] = await pool.query(
+              `SELECT * FROM tour_itinerary 
+               WHERE Ma_tour = ? AND (Ma_lich IS NULL OR Ma_lich = '') 
+               ORDER BY Ngay_thu ASC`,
+              [maTour]
+            );
+            
+            console.log(`🔍 [BOOKING] Found ${tourItineraryRows.length} general itinerary items for tour ${maTour}`);
+            
+            if (tourItineraryRows.length > 0) {
+              itineraryRows = tourItineraryRows;
+              console.log(`✅ [BOOKING] Loaded ${itineraryRows.length} general itinerary items for tour ${maTour}`);
+            }
+          }
+        } else {
+          // Nếu không có cột Ma_lich hoặc không có Ma_lich, lấy lịch trình tour chung
+          console.log(`⚠️ [BOOKING] No Ma_lich column or Ma_lich is null, loading general tour itinerary...`);
+          const [tourItineraryRows] = await pool.query(
+            `SELECT * FROM tour_itinerary WHERE Ma_tour = ? ORDER BY Ngay_thu ASC`,
+            [maTour]
+          );
+          
+          console.log(`🔍 [BOOKING] Found ${tourItineraryRows.length} general itinerary items for tour ${maTour}`);
+          
+          if (tourItineraryRows.length > 0) {
+            itineraryRows = tourItineraryRows;
+          }
+        }
+        
+        if (itineraryRows.length > 0) {
+          itinerary = itineraryRows;
+          console.log(`✅ [BOOKING] Final itinerary set with ${itinerary.length} items`);
+          console.log(`🔍 [BOOKING] First itinerary item:`, JSON.stringify(itinerary[0], null, 2));
+        } else {
+          console.log(`⚠️ [BOOKING] No itinerary rows found, checking old Lich_trinh table...`);
+          // Fallback: Kiểm tra bảng Lich_trinh cũ nếu có
+          const [tableCheck] = await pool.query(
+            `SELECT COUNT(*) as count 
+             FROM information_schema.tables 
+             WHERE table_schema = DATABASE() 
+             AND table_name = 'Lich_trinh'`
+          );
+          
+          if (tableCheck.length > 0 && tableCheck[0].count > 0) {
+            const [oldItineraryRows] = await pool.query(
+              `SELECT * FROM Lich_trinh WHERE Ma_tour = ? ORDER BY Ngay, Buoi, Gio`,
+              [tourRows[0].Ma_tour]
+            );
+            itinerary = oldItineraryRows;
+            console.log(`✅ [BOOKING] Loaded ${oldItineraryRows.length} items from old Lich_trinh table`);
+          } else {
+            console.log(`⚠️ [BOOKING] No itinerary found in any table`);
+          }
+        }
+      } catch (error) {
+        // Nếu bảng không tồn tại, bỏ qua và tiếp tục
+        console.error('❌ [BOOKING] Error getting itinerary:', error.message);
+        console.error('❌ [BOOKING] Error stack:', error.stack);
+        itinerary = null;
+      }
+    } else {
+      console.log(`⚠️ [BOOKING] No tour rows found or no Ma_tour`);
+    }
+    
+    console.log(`🔍 [BOOKING] Final itinerary before return:`, itinerary ? `${itinerary.length} items` : 'null');
     
     // Get tickets
     const [ticketRows] = await pool.query(
@@ -455,12 +599,46 @@ static async getAll(filters = {}) {
       [bookingId]
     );
     
-    return {
-      booking: bookingRows[0],
-      tour: tourRows.length > 0 ? tourRows[0] : null,
-      tickets: ticketRows,
-      services: serviceRows
-    };
+      const result = {
+        booking: bookingRows[0],
+        tour: tourRows.length > 0 ? tourRows[0] : null,
+        schedule: tourRows.length > 0 ? {
+          Ma_lich: tourRows[0].Ma_lich,
+          Ngay_bat_dau: tourRows[0].Ngay_bat_dau,
+          Ngay_ket_thuc: tourRows[0].Ngay_ket_thuc,
+          So_cho: tourRows[0].So_cho
+        } : null,
+        guide: tourRows.length > 0 && tourRows[0].Ma_huong_dan_vien ? {
+          Ma_huong_dan_vien: tourRows[0].Ma_huong_dan_vien,
+          Ten_huong_dan_vien: tourRows[0].Ten_huong_dan_vien,
+          Anh_dai_dien: tourRows[0].guide_avatar,
+          So_dien_thoai: tourRows[0].guide_phone,
+          Ngon_ngu: tourRows[0].guide_languages,
+          Kinh_nghiem: tourRows[0].guide_experience,
+          avg_rating: tourRows[0].guide_avg_rating,
+          rating_count: tourRows[0].guide_rating_count
+        } : null,
+        itinerary: itinerary,
+        tickets: ticketRows,
+        services: serviceRows
+      };
+      
+      console.log(`✅ [BOOKING] Returning result with itinerary:`, itinerary ? `${itinerary.length} items` : 'null');
+      if (itinerary && itinerary.length > 0) {
+        console.log(`🔍 [BOOKING] Sample itinerary item:`, {
+          Ma_itinerary: itinerary[0].Ma_itinerary,
+          Ma_tour: itinerary[0].Ma_tour,
+          Ma_lich: itinerary[0].Ma_lich,
+          Ngay_thu: itinerary[0].Ngay_thu,
+          Tieu_de: itinerary[0].Tieu_de
+        });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error in getBookingDetails:', error);
+      throw error;
+    }
   }
 
   /**
@@ -691,13 +869,14 @@ static async getAll(filters = {}) {
         b.Phuong_thuc_thanh_toan,
         b.Ngay_thanh_toan,
         kh.Ten_khach_hang,
-        kh.Email,
+        t_account.Email,
         t.Ten_tour,
         lkh.Ngay_bat_dau,
         lkh.Ngay_ket_thuc,
         lkh.So_cho
       FROM \`${await Booking.getBookingTableName()}\` b
       JOIN Khach_hang kh ON b.Ma_khach_hang = kh.Ma_khach_hang
+      LEFT JOIN tai_khoan t_account ON kh.Id_user = t_account.Id_user
       JOIN Chi_tiet_booking ctb ON b.Ma_booking = ctb.Ma_booking
       JOIN Lich_khoi_hanh lkh ON ctb.Ma_lich = lkh.Ma_lich
       JOIN Tour_du_lich t ON lkh.Ma_tour = t.Ma_tour
@@ -719,7 +898,7 @@ static async getAll(filters = {}) {
       SELECT 
         b.*,
         kh.Ten_khach_hang,
-        kh.Email,
+        t_account.Email,
         kh.Dia_chi,
         kh.Cccd,
         t.Ten_tour,
@@ -732,6 +911,7 @@ static async getAll(filters = {}) {
         km.Gia_tri as Gia_tri_khuyen_mai
       FROM \`${await Booking.getBookingTableName()}\` b
       JOIN Khach_hang kh ON b.Ma_khach_hang = kh.Ma_khach_hang
+      LEFT JOIN tai_khoan t_account ON kh.Id_user = t_account.Id_user
       JOIN Chi_tiet_booking ctb ON b.Ma_booking = ctb.Ma_booking
       JOIN Lich_khoi_hanh lkh ON ctb.Ma_lich = lkh.Ma_lich
       JOIN Tour_du_lich t ON lkh.Ma_tour = t.Ma_tour
@@ -1055,12 +1235,14 @@ static async getAll(filters = {}) {
    * Update payment status for booking
    * @param {string} bookingId - Booking ID
    * @param {Object} paymentStatus - Payment status information
+   * @param {Object} externalConnection - Database connection from outside (optional)
    * @returns {boolean} - Success status
    */
-  static async updatePaymentStatus(bookingId, paymentStatus) {
+  static async updatePaymentStatus(bookingId, paymentStatus, externalConnection = null) {
+    const useExternalConnection = externalConnection !== null;
+    const connection = useExternalConnection ? externalConnection : await pool.getConnection();
+    
     try {
-      const connection = await pool.getConnection();
-      
       const updateFields = [];
       const values = [];
       
@@ -1098,10 +1280,15 @@ static async getAll(filters = {}) {
       const query = `UPDATE Booking SET ${updateFields.join(', ')} WHERE Ma_booking = ?`;
       await connection.query(query, values);
       
-      connection.release();
+      if (!useExternalConnection) {
+        connection.release();
+      }
       return true;
     } catch (error) {
       console.error('Update payment status error:', error);
+      if (!useExternalConnection) {
+        connection.release();
+      }
       throw error;
     }
   }

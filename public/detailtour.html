@@ -682,6 +682,13 @@
       apiRequest(`/tours/schedules/${scheduleId}`)
         .then(data => {
           if (data.status === 'success') {
+            // Debug: log dữ liệu schedule để kiểm tra
+            console.log('📅 Schedule data from API:', data.data.schedule);
+            console.log('⭐ Guide rating info:', {
+              guide_avg_rating: data.data.schedule?.guide_avg_rating,
+              guide_rating_count: data.data.schedule?.guide_rating_count,
+              Ma_huong_dan_vien: data.data.schedule?.Ma_huong_dan_vien
+            });
             displayScheduleDetails(data.data.schedule);
           } else {
             throw new Error(data.message || 'Không thể lấy thông tin lịch trình');
@@ -709,11 +716,33 @@
         timeLocation.textContent = `${formatDate(startDate)} - ${formatDate(endDate)}`;
       }
       
+      // Lưu thông tin HDV để hiển thị trong modal
+      window.currentScheduleGuide = schedule;
+      
+      // Hiển thị button để xem thông tin HDV nếu có
+      let guideButtonHtml = '';
+      if (schedule.Ma_huong_dan_vien && schedule.Ten_huong_dan_vien) {
+        guideButtonHtml = `
+          <div class="mt-3">
+            <button type="button" class="btn btn-outline-primary" onclick="showGuideModal()">
+              <i class="fas fa-user-tie me-2"></i>Xem thông tin Hướng dẫn viên
+            </button>
+          </div>
+        `;
+      } else {
+        guideButtonHtml = `
+          <div class="mt-3">
+            <p class="text-muted mb-0"><i class="fas fa-info-circle me-2"></i>Chưa có hướng dẫn viên được phân công</p>
+          </div>
+        `;
+      }
+      
       document.getElementById('schedule-details').innerHTML = `
         <h5 class="fw-bold mb-3">Lịch trình chi tiết</h5>
         <p><i class="fas fa-calendar-day me-2"></i> Ngày bắt đầu: ${formatDate(startDate)}</p>
         <p><i class="fas fa-calendar-check me-2"></i> Ngày kết thúc: ${formatDate(endDate)}</p>
         <p><i class="fas fa-users me-2"></i> Số chỗ còn lại: <span class="badge bg-success">${schedule.availableSeats !== undefined ? schedule.availableSeats : (schedule.So_cho_con_lai || schedule.So_cho || 0)}</span></p>
+        ${guideButtonHtml}
       `;
       
       // Set available seats in hidden input for validation
@@ -1667,6 +1696,152 @@
         console.error('Lỗi khi cập nhật rating:', error);
       }
     };
+    
+    // Hàm hiển thị modal thông tin HDV
+    function showGuideModal() {
+      const schedule = window.currentScheduleGuide;
+      if (!schedule || !schedule.Ma_huong_dan_vien || !schedule.Ten_huong_dan_vien) {
+        alert('Chưa có thông tin hướng dẫn viên');
+        return;
+      }
+      
+      // Debug: log dữ liệu để kiểm tra
+      console.log('🔍 Guide data from schedule:', {
+        Ma_huong_dan_vien: schedule.Ma_huong_dan_vien,
+        Ten_huong_dan_vien: schedule.Ten_huong_dan_vien,
+        guide_avg_rating: schedule.guide_avg_rating,
+        guide_rating_count: schedule.guide_rating_count,
+        guide_avatar: schedule.guide_avatar
+      });
+      
+      // Xử lý rating - chuyển đổi sang number và kiểm tra
+      let avgRating = 0;
+      let ratingCount = 0;
+      
+      if (schedule.guide_avg_rating !== null && schedule.guide_avg_rating !== undefined) {
+        avgRating = parseFloat(schedule.guide_avg_rating);
+        if (isNaN(avgRating)) avgRating = 0;
+      }
+      
+      if (schedule.guide_rating_count !== null && schedule.guide_rating_count !== undefined) {
+        ratingCount = parseInt(schedule.guide_rating_count);
+        if (isNaN(ratingCount)) ratingCount = 0;
+      }
+      
+      console.log('📊 Processed rating:', { avgRating, ratingCount });
+      
+      const stars = Math.round(avgRating);
+      const starIcons = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+      
+      // Xử lý ảnh đại diện
+      let avatarUrl = schedule.guide_avatar;
+      const defaultAvatarSvg = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="150" height="150"%3E%3Crect fill="%23ddd" width="150" height="150"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="50" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3E%3F%3C/text%3E%3C/svg%3E';
+      
+      if (!avatarUrl || avatarUrl === null || avatarUrl === '') {
+        avatarUrl = defaultAvatarSvg;
+      } else {
+        // Xử lý đường dẫn ảnh
+        if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
+          if (avatarUrl.startsWith('/uploads')) {
+            avatarUrl = '/images' + avatarUrl;
+          } else if (!avatarUrl.startsWith('/images')) {
+            avatarUrl = '/images/' + avatarUrl;
+          }
+          // Sửa lỗi duplicate /images
+          if (avatarUrl.startsWith('/images/images/')) {
+            avatarUrl = avatarUrl.replace('/images/images/', '/images/');
+          }
+          // Thêm base URL nếu cần
+          if (!avatarUrl.startsWith('http')) {
+            const baseUrl = window.location.origin;
+            avatarUrl = baseUrl + avatarUrl;
+          }
+        }
+      }
+      
+      // Escape HTML để tránh lỗi syntax
+      const escapeHtml = (str) => {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      };
+      
+      const escapedAvatarUrl = escapeHtml(avatarUrl);
+      const escapedGuideName = escapeHtml(schedule.Ten_huong_dan_vien);
+      
+      // Tạo modal HTML
+      const modalHtml = `
+        <div class="modal fade" id="guideInfoModal" tabindex="-1" aria-labelledby="guideInfoModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="guideInfoModalLabel">
+                  <i class="fas fa-user-tie me-2"></i>Thông tin Hướng dẫn viên
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body text-center">
+                <div class="mb-3">
+                  <img id="guideModalAvatar" 
+                       src="${escapedAvatarUrl}" 
+                       alt="${escapedGuideName}" 
+                       class="img-fluid rounded-circle" 
+                       style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #007bff;">
+                </div>
+                <h4 class="mb-3">${escapedGuideName}</h4>
+                ${avgRating > 0 && ratingCount > 0 ? `
+                  <div class="mb-3">
+                    <div class="star-rating text-warning mb-2" style="font-size: 1.5rem;">${starIcons}</div>
+                    <div>
+                      <span class="h5 fw-bold">${avgRating.toFixed(1)}</span>
+                      <span class="text-muted">/ 5.0</span>
+                      ${ratingCount > 0 ? `<span class="text-muted ms-2">(${ratingCount} ${ratingCount === 1 ? 'đánh giá' : 'đánh giá'})</span>` : ''}
+                    </div>
+                  </div>
+                ` : `
+                  <div class="mb-3">
+                    <p class="text-muted"><i class="fas fa-info-circle me-2"></i>Chưa có đánh giá</p>
+                  </div>
+                `}
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Xóa modal cũ nếu có
+      const existingModal = document.getElementById('guideInfoModal');
+      if (existingModal) {
+        existingModal.remove();
+      }
+      
+      // Thêm modal mới vào body
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      
+      // Set onerror handler sau khi element được tạo
+      const avatarImg = document.getElementById('guideModalAvatar');
+      if (avatarImg) {
+        avatarImg.onerror = function() {
+          this.src = defaultAvatarSvg;
+        };
+      }
+      
+      // Hiển thị modal
+      const modal = new bootstrap.Modal(document.getElementById('guideInfoModal'));
+      modal.show();
+      
+      // Xóa modal khi đóng
+      document.getElementById('guideInfoModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+      });
+    }
   </script>
 </body>
 </html>

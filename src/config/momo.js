@@ -24,8 +24,8 @@ const MOMO_CONFIG = {
     // REFUND_PAYMENT_URL: "https://payment.momo.vn/v2/gateway/api/refund",
     
     // Callback URLs
-    REDIRECT_URL: "https://3ca6a3cf76af.ngrok-free.app/payment/momo/return",
-    IPN_URL: "https://3ca6a3cf76af.ngrok-free.app/api/payment/momo/ipn",
+    REDIRECT_URL: "https://276404fabdd3.ngrok-free.app/payment/momo/return",
+    IPN_URL: "https://276404fabdd3.ngrok-free.app/api/payment/momo/ipn",
     
     // Request type
     REQUEST_TYPE: "captureWallet",

@@ -289,11 +289,14 @@ function displayBookings(bookings) {
                                     <i class="fas fa-exclamation-triangle"></i>Đã hết hạn
                                 </button>
                             ` : (booking.Trang_thai_booking === 'Da_thanh_toan' || booking.Trang_thai === 'Đã thanh toán' || booking.Trang_thai_booking === 'Đã thanh toán' || booking.Trang_thai_booking === 'Paid') ? `
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-success" disabled>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <button class="btn btn-info btn-sm" onclick="viewBookingDetails('${booking.Ma_booking}')" style="flex: 0 0 auto;">
+                                        <i class="fas fa-info-circle"></i>Xem thông tin
+                                    </button>
+                                    <button class="btn btn-success btn-sm" disabled>
                                         <i class="fas fa-check-circle"></i>Đã thanh toán
                                     </button>
-                                    <button class="btn btn-warning" onclick="checkAndRateTour('${booking.Ma_booking}')" id="rate-btn-${booking.Ma_booking}">
+                                    <button class="btn btn-warning btn-sm" onclick="checkAndRateTour('${booking.Ma_booking}')" id="rate-btn-${booking.Ma_booking}">
                                         <i class="fas fa-star"></i>Đánh giá
                                     </button>
                                 </div>
@@ -647,6 +650,12 @@ function formatCurrency(amount) {
 }
 
 // Hàm chuyển hướng đến trang thanh toán
+// Hàm xem chi tiết booking
+function viewBookingDetails(bookingId) {
+    // Redirect đến trang chi tiết booking
+    window.location.href = `booking-detail.html?bookingId=${bookingId}`;
+}
+
 function redirectToPayment(bookingId, amount) {
     // Lưu thông tin đặt tour vào sessionStorage
     sessionStorage.setItem('paymentBookingId', bookingId);
