@@ -7,6 +7,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Mapbox GL CSS -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
     <style>
         .form-section {
             margin-bottom: 2rem;
@@ -28,14 +30,284 @@
         .itinerary-day-card .card-header {
             background-color: #f8f9fa !important;
         }
+        /* Mapbox styles */
+        #mapbox-map {
+            width: 100%;
+            height: 400px;
+            border-radius: 0.25rem;
+            margin-top: 10px;
+        }
+        .location-search-container {
+            position: relative;
+        }
+        .location-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 0.25rem;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+        .location-suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .location-suggestion-item:hover {
+            background-color: #f8f9fa;
+        }
+        .location-suggestion-item:last-child {
+            border-bottom: none;
+        }
+        .map-info {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 0.25rem;
+        }
+        /* Stepper Progress Bar Styles */
+        .stepper-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .stepper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            margin-bottom: 2rem;
+        }
+        .stepper::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #e0e0e0;
+            z-index: 0;
+        }
+        .stepper-progress {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            height: 2px;
+            background: #007bff;
+            z-index: 1;
+            transition: width 0.3s ease;
+        }
+        .step {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            cursor: pointer;
+        }
+        .step:not(:last-child) {
+            margin-right: 0;
+        }
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #999;
+            transition: all 0.3s ease;
+            margin-bottom: 0.5rem;
+        }
+        .step.active .step-circle {
+            border-color: #007bff;
+            background: #007bff;
+            color: white;
+        }
+        .step.completed .step-circle {
+            border-color: #28a745;
+            background: #28a745;
+            color: white;
+        }
+        .step.completed .step-circle::before {
+            content: '✓';
+        }
+        .step-label {
+            font-size: 0.875rem;
+            text-align: center;
+            color: #666;
+            max-width: 120px;
+        }
+        .step.active .step-label {
+            color: #007bff;
+            font-weight: 600;
+        }
+        .step.completed .step-label {
+            color: #28a745;
+        }
+        .step.disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .step-navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e0e0e0;
+        }
+        .step-navigation button {
+            min-width: 120px;
+        }
+        .step-validation-error {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+        .step-validation-error.show {
+            display: block;
+        }
+        /* Preview Styles */
+        .tour-preview {
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 2rem;
+        }
+        .preview-section {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .preview-section h5 {
+            color: #007bff;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .preview-row {
+            display: flex;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .preview-row:last-child {
+            border-bottom: none;
+        }
+        .preview-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 150px;
+        }
+        .preview-value {
+            color: #212529;
+            flex: 1;
+        }
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+        }
+        .preview-map {
+            height: 200px;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+        }
+        .preview-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .badge-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .badge-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .badge-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .badge-info {
+            background-color: #17a2b8;
+            color: white;
+        }
     </style>
 </head>
 <body>
     <div class="container my-5">
         <h2 id="pageTitle">Thêm Tour Du Lịch Mới</h2>
         
+        <!-- Stepper Progress Bar -->
+        <div class="stepper-container">
+            <div class="stepper" id="tourStepper">
+                <div class="stepper-progress" id="stepperProgress"></div>
+                <div class="step active" data-step="1">
+                    <div class="step-circle">1</div>
+                    <div class="step-label">Thông tin cơ bản</div>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-circle">2</div>
+                    <div class="step-label">Chọn điểm đến</div>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-circle">3</div>
+                    <div class="step-label">Lịch khởi hành</div>
+                </div>
+                <div class="step" data-step="4">
+                    <div class="step-circle">4</div>
+                    <div class="step-label">Mô tả tour</div>
+                </div>
+                <div class="step" data-step="5">
+                    <div class="step-circle">5</div>
+                    <div class="step-label">Vị trí bản đồ</div>
+                </div>
+                <div class="step disabled" data-step="6">
+                    <div class="step-circle">6</div>
+                    <div class="step-label">Lịch trình chi tiết</div>
+                </div>
+                <div class="step" data-step="7">
+                    <div class="step-circle">7</div>
+                    <div class="step-label">Khuyến mãi</div>
+                </div>
+                <div class="step" data-step="8">
+                    <div class="step-circle">8</div>
+                    <div class="step-label">Xem trước</div>
+                </div>
+            </div>
+        </div>
+        
         <form id="addTourForm">
-            <!-- Thông tin cơ bản -->
+            <!-- Step 1: Thông tin cơ bản -->
+            <div class="step-content active" data-step="1">
             <div class="form-section">
                 <h4>1. Thông Tin Cơ Bản</h4>
                 <div class="row">
@@ -88,32 +360,75 @@
                     <img id="preview-image" src="#" alt="Preview">
                 </div>
             </div>
+            </div>
 
-            <!-- Chọn Điểm Đến -->
+            <!-- Step 2: Chọn Điểm Đến -->
+            <div class="step-content" data-step="2">
             <div class="form-section">
                 <h4>2. Chọn Điểm Đến</h4>
                 <div id="diadanh-container" class="row">
                     <!-- Danh sách địa danh sẽ được load bằng JavaScript -->
                 </div>
             </div>
+            </div>
 
-            <!-- Chọn Lịch Khởi Hành -->
+            <!-- Step 3: Chọn Lịch Khởi Hành -->
+            <div class="step-content" data-step="3">
             <div class="form-section">
                 <h4>3. Chọn Lịch Khởi Hành</h4>
                 <div id="lichkhoihanh-container">
                     <!-- Danh sách lịch khởi hành sẽ được load bằng JavaScript -->
                 </div>
             </div>
+            </div>
 
-            <!-- Mô Tả Chi Tiết -->
+            <!-- Step 4: Mô Tả Chi Tiết -->
+            <div class="step-content" data-step="4">
             <div class="form-section">
                 <h4>4. Mô Tả Tour</h4>
                 <textarea id="mo_ta" name="mo_ta" class="form-control"></textarea>
             </div>
+            </div>
 
-            <!-- Quản lý Lịch trình Chi Tiết theo Lịch Khởi Hành -->
+            <!-- Step 5: Vị trí trên bản đồ (Mapbox) -->
+            <div class="step-content" data-step="5">
             <div class="form-section">
-                <h4>5. Quản lý Lịch trình Chi Tiết</h4>
+                <h4>5. Vị Trí Tour Trên Bản Đồ</h4>
+                <div class="mb-3">
+                    <label class="form-label">Tìm kiếm vị trí</label>
+                    <div class="location-search-container">
+                        <input type="text" 
+                               id="searchLocation" 
+                               class="form-control" 
+                               placeholder="Nhập tên địa điểm (VD: Hồ Chí Minh, Đà Lạt, Hà Nội...)">
+                        <div id="locationSuggestions" class="location-suggestions"></div>
+                    </div>
+                    <small class="text-muted">Gõ tên địa điểm và chọn từ danh sách gợi ý</small>
+                </div>
+                
+                <!-- Hidden inputs để lưu map data -->
+                <input type="hidden" id="latitude" name="latitude">
+                <input type="hidden" id="longitude" name="longitude">
+                <input type="hidden" id="map_address" name="map_address">
+                
+                <!-- Map container -->
+                <div id="mapbox-map"></div>
+                
+                <!-- Map info display -->
+                <div id="mapInfo" class="map-info d-none">
+                    <strong><i class="fas fa-map-marker-alt me-2"></i>Vị trí đã chọn:</strong>
+                    <div id="selectedLocationName" class="mt-2"></div>
+                    <div class="text-muted small mt-1">
+                        <span id="selectedCoordinates"></span>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- Step 6: Quản lý Lịch trình Chi Tiết theo Lịch Khởi Hành -->
+            <div class="step-content" data-step="6">
+            <div class="form-section">
+                <h4>6. Quản lý Lịch trình Chi Tiết</h4>
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     <strong>Lưu ý:</strong> Bạn phải chọn lịch khởi hành trước khi quản lý lịch trình.
@@ -197,10 +512,12 @@
                     </div>
                 </div>
             </div>
+            </div>
 
-            <!-- Khuyến mãi theo Tour -->
+            <!-- Step 7: Khuyến mãi theo Tour -->
+            <div class="step-content" data-step="7">
             <div class="form-section">
-                <h4>6. Khuyến mãi của Tour</h4>
+                <h4>7. Khuyến mãi của Tour</h4>
                 <div class="row g-3 align-items-end">
                     <div class="col-md-3">
                         <label class="form-label">Mã coupon (Ma_km)</label>
@@ -231,10 +548,34 @@
                     <span id="pricePromoPreview" class="fw-bold text-danger"></span>
                 </div>
             </div>
+            </div>
 
-            <div class="d-flex justify-content-between mt-4">
-                <button type="button" class="btn btn-secondary" onclick="window.location.href='admin.html#tours'">Quay lại</button>
-                <button type="submit" class="btn btn-primary" id="submitBtn">Lưu Tour</button>
+            <!-- Step 8: Preview Tour -->
+            <div class="step-content" data-step="8">
+            <div class="form-section">
+                <h4>8. Xem Trước Thông Tin Tour</h4>
+                <div id="tourPreviewContainer" class="tour-preview">
+                    <!-- Preview content will be generated by JavaScript -->
+                </div>
+            </div>
+            </div>
+
+            <!-- Step Navigation -->
+            <div class="step-navigation">
+                <button type="button" class="btn btn-secondary" id="btnPrevStep" style="display: none;">
+                    <i class="fas fa-arrow-left me-2"></i>Bước trước
+                </button>
+                <div class="ms-auto">
+                    <button type="button" class="btn btn-outline-secondary me-2" onclick="window.location.href='admin.html#tours'">
+                        <i class="fas fa-times me-2"></i>Hủy
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btnNextStep">
+                        Bước tiếp theo<i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                    <button type="button" class="btn btn-success" id="submitBtn" style="display: none;" onclick="handleFinalSubmit()">
+                        <i class="fas fa-save me-2"></i>Lưu Tour
+                    </button>
+                </div>
             </div>
         </form>
     </div>
@@ -277,6 +618,84 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+    <!-- Mapbox GL JS -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
     <script src="/js/admin/admin_addtour.js"></script>
+    <script src="/js/admin/mapbox-admin.js"></script>
+    <script src="/js/admin/tour-stepper.js"></script>
+    <script>
+        // Khởi tạo stepper khi DOM ready
+        $(document).ready(function() {
+            // Khởi tạo stepper
+            initStepper();
+            
+            // Load draft nếu có (chỉ khi tạo mới, không phải edit)
+            const urlParams = new URLSearchParams(window.location.search);
+            const isEditMode = urlParams.get('edit') ? true : false;
+            if (!isEditMode) {
+                loadDraft();
+            }
+            
+            // Lưu draft khi có thay đổi trên form
+            $('#addTourForm').on('change input', 'input, select, textarea', function() {
+                // Debounce: Chỉ lưu sau 1 giây không có thay đổi
+                clearTimeout(window.draftSaveTimeout);
+                window.draftSaveTimeout = setTimeout(() => {
+                    if (typeof saveDraft === 'function') {
+                        saveDraft();
+                    }
+                }, 1000);
+            });
+            
+            // Xử lý submit form
+            $('#addTourForm').on('submit', function(e) {
+                // Nếu chưa ở step preview, chuyển đến preview và prevent submit
+                if (typeof currentStep !== 'undefined' && currentStep !== 8) {
+                    e.preventDefault();
+                    goToStep(8);
+                    return false;
+                }
+                // Nếu đã ở preview, cho phép submit bình thường
+            });
+        });
+        
+        // Hàm xử lý submit cuối cùng (được gọi từ nút Lưu Tour ở step 8)
+        function handleFinalSubmit() {
+            // Đảm bảo đang ở step 8
+            if (typeof currentStep === 'undefined' || currentStep !== 8) {
+                console.log('⚠️ Chưa ở step 8, chuyển đến step 8...');
+                if (typeof goToStep === 'function') {
+                    goToStep(8);
+                }
+                return;
+            }
+            
+            console.log('✅ Đang ở step 8, bắt đầu submit form...');
+            
+            // Set flag để form submit handler biết đây là submit từ preview
+            window.submitFromPreview = true;
+            
+            // Disable nút submit để tránh double submit
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang lưu...';
+            }
+            
+            // Trigger submit form thực sự bằng cách gọi trực tiếp handler
+            const form = document.getElementById('addTourForm');
+            if (form) {
+                // Tạo submit event và dispatch
+                const submitEvent = new Event('submit', { 
+                    bubbles: true, 
+                    cancelable: true 
+                });
+                
+                // Dispatch event để trigger handler trong admin_addtour.js
+                // Sử dụng jQuery trigger để đảm bảo tương thích
+                $(form).trigger('submit');
+            }
+        }
+    </script>
 </body>
 </html>

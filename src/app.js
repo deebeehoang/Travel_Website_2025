@@ -421,6 +421,7 @@ const momoRoutes = require('./routes/momo.routes');
 const guideRoutes = require('./routes/guide.routes');
 const adminGuideRoutes = require('./routes/admin-guide.routes');
 const tourItineraryRoutes = require('./routes/tourItinerary.routes');
+const mapRoutes = require('./routes/map.routes');
 
 // ==============================================
 // UPLOAD ROUTE
@@ -528,6 +529,7 @@ app.use('/api/ai', require('./routes/ai.routes'));
 app.use('/api/guide', guideRoutes);
 app.use('/api/admin', adminGuideRoutes);
 app.use('/api', tourItineraryRoutes);
+app.use('/api/map', mapRoutes);
 
 // ==============================================
 // CONTENT-TYPE MIDDLEWARE

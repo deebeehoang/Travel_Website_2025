@@ -17,7 +17,7 @@ class TourController {
 static async getAllTours(req, res) {
   try {
     console.log('🔍 getAllTours called with query:', req.query);
-    const { search, tourType, limit } = req.query;
+    const { search, tourType, limit, page } = req.query;
 
     // Kiểm tra các cột có tồn tại trong bảng Tour_du_lich không
     const [columns] = await pool.query(
@@ -68,14 +68,25 @@ static async getAllTours(req, res) {
       sql += ' WHERE ' + conditions.join(' AND ');
     }
     
-    // Thêm LIMIT nếu có
-    if (limit) {
-      const limitNum = parseInt(limit);
-      if (!isNaN(limitNum) && limitNum > 0) {
-        sql += ` LIMIT ${limitNum}`;
-      }
+    // Pagination: mặc định 12 tour mỗi page
+    const perPage = limit ? parseInt(limit) : 12;
+    const currentPage = page ? parseInt(page) : 1;
+    const offset = (currentPage - 1) * perPage;
+    
+    // Thêm LIMIT và OFFSET cho pagination
+    if (!isNaN(perPage) && perPage > 0) {
+      sql += ` LIMIT ${perPage} OFFSET ${offset}`;
+      console.log(`📄 Pagination: page=${currentPage}, perPage=${perPage}, offset=${offset}`);
     }
 
+    // Đếm tổng số tour (trước khi pagination) để tính tổng số page
+    let countSql = sql.replace(/SELECT[\s\S]*?FROM/i, 'SELECT COUNT(*) as total FROM');
+    // Loại bỏ ORDER BY, LIMIT, OFFSET khỏi count query nếu có
+    countSql = countSql.replace(/ORDER BY[\s\S]*$/i, '');
+    countSql = countSql.replace(/LIMIT[\s\S]*$/i, '');
+    const [countResult] = await pool.query(countSql, params);
+    const totalTours = countResult[0]?.total || 0;
+    
     const [rows] = await pool.query(sql, params);
     const tours = rows.map(t => ({
       ...t,
@@ -83,10 +94,20 @@ static async getAllTours(req, res) {
     }));
 
     const filteredTours = tours.filter(tour => tour.Tinh_trang !== 'Hết chỗ');
+    
+    // Tính tổng số page (dựa trên tổng số tour trước khi filter "Hết chỗ")
+    const totalPages = Math.ceil(totalTours / perPage);
 
     res.status(200).json({
       status: 'success',
       results: filteredTours.length,
+      pagination: {
+        currentPage: currentPage,
+        perPage: perPage,
+        total: totalTours,
+        totalPages: totalPages,
+        hasMore: currentPage < totalPages
+      },
       data: { tours: filteredTours }
     });
   } catch (error) {
@@ -203,7 +224,10 @@ static async getAllTours(req, res) {
         Hinh_anh: imageFromBodyUppercase, // Lấy Hinh_anh (chữ hoa) từ req.body
         mo_ta,                      // Lấy mô tả từ req.body
         Mo_ta,                      // Lấy mô tả viết hoa từ req.body 
-        description                 // Lấy mô tả từ trường description (phòng hờ)
+        description,                // Lấy mô tả từ trường description (phòng hờ)
+        latitude,                   // Tọa độ vĩ độ từ Mapbox
+        longitude,                  // Tọa độ kinh độ từ Mapbox
+        map_address                 // Địa chỉ từ Mapbox
       } = req.body;
 
       // Log chi tiết dữ liệu mô tả
@@ -272,7 +296,10 @@ static async getAllTours(req, res) {
         hinh_anh,
         mo_ta: moTaValue,     // Thêm trường mo_ta với cả 3 biến thể
         Mo_ta: moTaValue,     
-        description: moTaValue
+        description: moTaValue,
+        latitude: latitude ? parseFloat(latitude) : null,      // Mapbox latitude
+        longitude: longitude ? parseFloat(longitude) : null,    // Mapbox longitude
+        map_address: map_address || null                        // Mapbox address
       };
 
       console.log('Tour data to be saved in DB:', JSON.stringify(tourData, null, 2));
@@ -320,7 +347,10 @@ static async getAllTours(req, res) {
         hinh_anh: imageFromBody,  // Lấy hinh_anh từ req.body
         mo_ta,                     // Lấy mô tả từ req.body
         Mo_ta,                     // Lấy mô tả viết hoa từ req.body
-        description                // Lấy mô tả từ trường description (phòng hờ)
+        description,               // Lấy mô tả từ trường description (phòng hờ)
+        latitude,                  // Tọa độ vĩ độ từ Mapbox
+        longitude,                 // Tọa độ kinh độ từ Mapbox
+        map_address                // Địa chỉ từ Mapbox
       } = req.body;
 
       // Log chi tiết body request để debug
@@ -388,7 +418,10 @@ static async getAllTours(req, res) {
         hinh_anh,
         mo_ta: moTaValue,        // Thêm trường mo_ta với cả 3 biến thể
         Mo_ta: moTaValue,
-        description: moTaValue
+        description: moTaValue,
+        latitude: latitude ? parseFloat(latitude) : null,      // Mapbox latitude
+        longitude: longitude ? parseFloat(longitude) : null,    // Mapbox longitude
+        map_address: map_address || null                        // Mapbox address
       };
 
       console.log('Tour data being sent to model for update:', JSON.stringify(tourData, null, 2));
