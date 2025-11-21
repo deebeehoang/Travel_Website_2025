@@ -318,20 +318,40 @@ async function loadAllTours() {
                     // Xử lý đường dẫn ảnh đúng cách
                     let imageSrc = 'tour-placeholder.jpg'; // Ảnh mặc định
                     if (tour.Hinh_anh) {
-                        if (tour.Hinh_anh.startsWith('/uploads/')) {
-                            // Đường dẫn từ database: /uploads/tours/filename.jpg
-                            // Chuyển thành uploads/tours/filename.jpg (bỏ dấu / đầu)
-                            imageSrc = tour.Hinh_anh.substring(1);
-                        } else if (tour.Hinh_anh.startsWith('uploads/')) {
-                            // Đường dẫn không có dấu / đầu
-                            imageSrc = tour.Hinh_anh;
-                        } else if (tour.Hinh_anh.startsWith('/images/')) {
-                            // Đường dẫn đã có /images/
-                            imageSrc = tour.Hinh_anh.substring(1); // Bỏ dấu / đầu
-                        } else {
-                            // Đường dẫn khác
-                            imageSrc = tour.Hinh_anh;
+                        let hinhAnh = tour.Hinh_anh.trim();
+                        
+                        // Nếu đã là URL đầy đủ (http/https), dùng trực tiếp
+                        if (hinhAnh.startsWith('http://') || hinhAnh.startsWith('https://')) {
+                            imageSrc = hinhAnh;
+                        } 
+                        // Nếu bắt đầu bằng /images/, bỏ /images/ để tránh duplicate
+                        else if (hinhAnh.startsWith('/images/')) {
+                            // Bỏ /images/ đầu tiên, giữ lại phần còn lại
+                            imageSrc = hinhAnh.substring('/images/'.length);
                         }
+                        // Nếu bắt đầu bằng /uploads/, thêm images vào trước
+                        else if (hinhAnh.startsWith('/uploads/')) {
+                            // Bỏ dấu / đầu, giữ lại uploads/...
+                            imageSrc = hinhAnh.substring(1);
+                        }
+                        // Nếu bắt đầu bằng uploads/ (không có / đầu)
+                        else if (hinhAnh.startsWith('uploads/')) {
+                            imageSrc = hinhAnh;
+                        }
+                        // Các trường hợp khác
+                        else {
+                            imageSrc = hinhAnh;
+                        }
+                    }
+                    
+                    // Tạo URL ảnh cuối cùng
+                    let imageUrl;
+                    if (imageSrc.startsWith('http://') || imageSrc.startsWith('https://')) {
+                        // URL đầy đủ, dùng trực tiếp
+                        imageUrl = imageSrc;
+                    } else {
+                        // Nối với CONFIG.IMAGE_URL (đã có /images ở cuối)
+                        imageUrl = `${CONFIG.IMAGE_URL}/${imageSrc}`;
                     }
                     
                     // Chuyển đổi loại tour để hiển thị
@@ -346,7 +366,7 @@ async function loadAllTours() {
                         <div class="col-md-4 mb-4">
                             <div class="tour-card-modern">
                                 <div class="tour-card-image-container">
-                                    <img src="${CONFIG.IMAGE_URL}/${imageSrc}" class="tour-card-image" alt="${tour.Ten_tour}">
+                                    <img src="${imageUrl}" class="tour-card-image" alt="${tour.Ten_tour}">
                                     <div class="tour-card-badge">${displayTourType}</div>
                                 </div>
                                 <div class="tour-card-content">
@@ -394,7 +414,12 @@ async function loadTours() {
 
         const tourType = document.getElementById('tourTypeFilter')?.value || '';
 
-        const queryParams = new URLSearchParams({ page: currentPage });
+        // Pagination: mỗi page 12 tour
+        const perPage = 12;
+        const queryParams = new URLSearchParams({ 
+            page: currentPage,
+            limit: perPage 
+        });
         if (searchQuery) queryParams.append('search', searchQuery);
         console.log('URL API:', `${CONFIG.API_BASE_URL}/tours?${queryParams}`);
 
@@ -426,7 +451,14 @@ async function loadTours() {
                 return true;
             });
 
-            hasMore = availableTours.length === 10;
+            // Kiểm tra xem còn tour nào không dựa trên pagination từ API
+            if (data.pagination) {
+                hasMore = data.pagination.hasMore || false;
+                console.log(`📄 Pagination info: page ${data.pagination.currentPage}/${data.pagination.totalPages}, hasMore: ${hasMore}, total: ${data.pagination.total}`);
+            } else {
+                // Fallback: nếu API không có pagination info
+                hasMore = availableTours.length >= perPage;
+            }
 
             if (currentPage === 1) {
                 document.getElementById('toursContainer').innerHTML = '';
@@ -498,20 +530,40 @@ function displayTour(tour) {
     // Xử lý đường dẫn ảnh đúng cách
     let imageSrc = 'tour-placeholder.jpg'; // Ảnh mặc định
     if (tour.Hinh_anh) {
-        if (tour.Hinh_anh.startsWith('/uploads/')) {
-            // Đường dẫn từ database: /uploads/tours/filename.jpg
-            // Chuyển thành uploads/tours/filename.jpg (bỏ dấu / đầu)
-            imageSrc = tour.Hinh_anh.substring(1);
-        } else if (tour.Hinh_anh.startsWith('uploads/')) {
-            // Đường dẫn không có dấu / đầu
-            imageSrc = tour.Hinh_anh;
-        } else if (tour.Hinh_anh.startsWith('/images/')) {
-            // Đường dẫn đã có /images/
-            imageSrc = tour.Hinh_anh.substring(1); // Bỏ dấu / đầu
-        } else {
-            // Đường dẫn khác
-            imageSrc = tour.Hinh_anh;
+        let hinhAnh = tour.Hinh_anh.trim();
+        
+        // Nếu đã là URL đầy đủ (http/https), dùng trực tiếp
+        if (hinhAnh.startsWith('http://') || hinhAnh.startsWith('https://')) {
+            imageSrc = hinhAnh;
+        } 
+        // Nếu bắt đầu bằng /images/, bỏ /images/ để tránh duplicate
+        else if (hinhAnh.startsWith('/images/')) {
+            // Bỏ /images/ đầu tiên, giữ lại phần còn lại
+            imageSrc = hinhAnh.substring('/images/'.length);
         }
+        // Nếu bắt đầu bằng /uploads/, thêm images vào trước
+        else if (hinhAnh.startsWith('/uploads/')) {
+            // Bỏ dấu / đầu, giữ lại uploads/...
+            imageSrc = hinhAnh.substring(1);
+        }
+        // Nếu bắt đầu bằng uploads/ (không có / đầu)
+        else if (hinhAnh.startsWith('uploads/')) {
+            imageSrc = hinhAnh;
+        }
+        // Các trường hợp khác
+        else {
+            imageSrc = hinhAnh;
+        }
+    }
+    
+    // Tạo URL ảnh cuối cùng
+    let imageUrl;
+    if (imageSrc.startsWith('http://') || imageSrc.startsWith('https://')) {
+        // URL đầy đủ, dùng trực tiếp
+        imageUrl = imageSrc;
+    } else {
+        // Nối với CONFIG.IMAGE_URL (đã có /images ở cuối)
+        imageUrl = `${CONFIG.IMAGE_URL}/${imageSrc}`;
     }
 
     // Chuyển đổi loại tour để hiển thị
@@ -526,7 +578,7 @@ function displayTour(tour) {
     tourCard.innerHTML = `
         <div class="tour-card-modern">
             <div class="tour-card-image-container">
-                <img src="${CONFIG.IMAGE_URL}/${imageSrc}" class="tour-card-image" alt="${tour.Ten_tour}">
+                <img src="${imageUrl}" class="tour-card-image" alt="${tour.Ten_tour}">${CONFIG.IMAGE_URL}/${imageSrc}" class="tour-card-image" alt="${tour.Ten_tour}">
                 <div class="tour-card-badge">${displayTourType}</div>
             </div>
             <div class="tour-card-content">

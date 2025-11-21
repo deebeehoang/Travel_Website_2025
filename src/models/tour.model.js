@@ -46,7 +46,7 @@ class Tour {
       console.log('==== TOUR MODEL CREATE ====');
       console.log('Tour data received in model:', JSON.stringify(tourData, null, 2));
       
-      const { ma_tour, ten_tour, thoi_gian, tinh_trang, loai_tour, gia_nguoi_lon, gia_tre_em, hinh_anh, mo_ta, Mo_ta } = tourData;
+      const { ma_tour, ten_tour, thoi_gian, tinh_trang, loai_tour, gia_nguoi_lon, gia_tre_em, hinh_anh, mo_ta, Mo_ta, latitude, longitude, map_address } = tourData;
       
       // Sử dụng mo_ta hoặc Mo_ta (để tương thích với cả hai trường hợp)
       let description = mo_ta || Mo_ta || null;
@@ -60,10 +60,42 @@ class Tour {
       console.log('Extracted image path:', hinh_anh);
       console.log('Extracted description:', description ? (description.length > 50 ? description.substring(0, 50) + '...' : description) : 'NULL');
       console.log('Description length:', description ? description.length : 0);
+      console.log('Map data:', { latitude, longitude, map_address });
       
-      // Thực hiện INSERT bao gồm cả Mo_ta trong một câu lệnh duy nhất
-      const insertSQL = 'INSERT INTO tour_du_lich (Ma_tour, Ten_tour, Thoi_gian, Tinh_trang, Loai_tour, Gia_nguoi_lon, Gia_tre_em, Hinh_anh, Mo_ta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
-      const insertParams = [ma_tour, ten_tour, thoi_gian, tinh_trang, loai_tour || 'trong_nuoc', gia_nguoi_lon, gia_tre_em, hinh_anh, description];
+      // Kiểm tra xem các cột map có tồn tại không
+      const [columns] = await pool.query(
+        `SELECT COLUMN_NAME 
+         FROM INFORMATION_SCHEMA.COLUMNS 
+         WHERE TABLE_SCHEMA = DATABASE() 
+           AND TABLE_NAME = 'tour_du_lich' 
+           AND COLUMN_NAME IN ('latitude', 'longitude', 'map_address')`
+      );
+      
+      const hasMapColumns = columns.length > 0;
+      const hasLatitude = columns.some(col => col.COLUMN_NAME === 'latitude');
+      const hasLongitude = columns.some(col => col.COLUMN_NAME === 'longitude');
+      const hasMapAddress = columns.some(col => col.COLUMN_NAME === 'map_address');
+      
+      // Thực hiện INSERT bao gồm cả Mo_ta và map data (nếu có)
+      let insertSQL = 'INSERT INTO tour_du_lich (Ma_tour, Ten_tour, Thoi_gian, Tinh_trang, Loai_tour, Gia_nguoi_lon, Gia_tre_em, Hinh_anh, Mo_ta';
+      let insertParams = [ma_tour, ten_tour, thoi_gian, tinh_trang, loai_tour || 'trong_nuoc', gia_nguoi_lon, gia_tre_em, hinh_anh, description];
+      
+      if (hasMapColumns) {
+        if (hasLatitude) {
+          insertSQL += ', latitude';
+          insertParams.push(latitude || null);
+        }
+        if (hasLongitude) {
+          insertSQL += ', longitude';
+          insertParams.push(longitude || null);
+        }
+        if (hasMapAddress) {
+          insertSQL += ', map_address';
+          insertParams.push(map_address || null);
+        }
+      }
+      
+      insertSQL += ') VALUES (' + insertParams.map(() => '?').join(', ') + ')';
       
       console.log('INSERT query (with Mo_ta):', insertSQL);
       console.log('INSERT parameters:', JSON.stringify(insertParams, null, 2));
@@ -97,7 +129,7 @@ class Tour {
       console.log('Tour ID:', id);
       console.log('Tour data received in model:', JSON.stringify(tourData, null, 2));
       
-      const { ten_tour, thoi_gian, tinh_trang, loai_tour, gia_nguoi_lon, gia_tre_em, hinh_anh, mo_ta, Mo_ta } = tourData;
+      const { ten_tour, thoi_gian, tinh_trang, loai_tour, gia_nguoi_lon, gia_tre_em, hinh_anh, mo_ta, Mo_ta, latitude, longitude, map_address } = tourData;
       
       // Sử dụng mo_ta hoặc Mo_ta (để tương thích với cả hai trường hợp)
       let description = mo_ta || Mo_ta || null;
@@ -111,10 +143,43 @@ class Tour {
       console.log('Extracted image path:', hinh_anh);
       console.log('Extracted description:', description ? (description.length > 50 ? description.substring(0, 50) + '...' : description) : 'NULL');
       console.log('Description length:', description ? description.length : 0);
+      console.log('Map data:', { latitude, longitude, map_address });
       
-      // Thực hiện UPDATE tất cả các trường bao gồm Mo_ta trong một câu lệnh duy nhất
-      const updateSQL = 'UPDATE tour_du_lich SET Ten_tour = ?, Thoi_gian = ?, Tinh_trang = ?, Loai_tour = ?, Gia_nguoi_lon = ?, Gia_tre_em = ?, Hinh_anh = ?, Mo_ta = ? WHERE Ma_tour = ?';
-      const updateParams = [ten_tour, thoi_gian, tinh_trang, loai_tour, gia_nguoi_lon, gia_tre_em, hinh_anh, description, id];
+      // Kiểm tra xem các cột map có tồn tại không
+      const [columns] = await pool.query(
+        `SELECT COLUMN_NAME 
+         FROM INFORMATION_SCHEMA.COLUMNS 
+         WHERE TABLE_SCHEMA = DATABASE() 
+           AND TABLE_NAME = 'tour_du_lich' 
+           AND COLUMN_NAME IN ('latitude', 'longitude', 'map_address')`
+      );
+      
+      const hasMapColumns = columns.length > 0;
+      const hasLatitude = columns.some(col => col.COLUMN_NAME === 'latitude');
+      const hasLongitude = columns.some(col => col.COLUMN_NAME === 'longitude');
+      const hasMapAddress = columns.some(col => col.COLUMN_NAME === 'map_address');
+      
+      // Thực hiện UPDATE tất cả các trường bao gồm Mo_ta và map data (nếu có)
+      let updateSQL = 'UPDATE tour_du_lich SET Ten_tour = ?, Thoi_gian = ?, Tinh_trang = ?, Loai_tour = ?, Gia_nguoi_lon = ?, Gia_tre_em = ?, Hinh_anh = ?, Mo_ta = ?';
+      let updateParams = [ten_tour, thoi_gian, tinh_trang, loai_tour, gia_nguoi_lon, gia_tre_em, hinh_anh, description];
+      
+      if (hasMapColumns) {
+        if (hasLatitude) {
+          updateSQL += ', latitude = ?';
+          updateParams.push(latitude || null);
+        }
+        if (hasLongitude) {
+          updateSQL += ', longitude = ?';
+          updateParams.push(longitude || null);
+        }
+        if (hasMapAddress) {
+          updateSQL += ', map_address = ?';
+          updateParams.push(map_address || null);
+        }
+      }
+      
+      updateSQL += ' WHERE Ma_tour = ?';
+      updateParams.push(id);
       
       console.log('UPDATE query (with Mo_ta):', updateSQL);
       console.log('UPDATE parameters:', JSON.stringify(updateParams, null, 2));

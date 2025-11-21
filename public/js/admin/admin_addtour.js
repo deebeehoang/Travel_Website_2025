@@ -113,6 +113,49 @@ $(document).ready(function() {
             $('#mo_ta').summernote('code', moTa);
             console.log('Nội dung mô tả:', moTa ? (moTa.length > 50 ? moTa.substring(0, 50) + '...' : moTa) : 'Không có');
             
+            // Load map data nếu có
+            const latitude = tour.latitude || tour.Latitude;
+            const longitude = tour.longitude || tour.Longitude;
+            const mapAddress = tour.map_address || tour.Map_address;
+            
+            console.log('🔍 Map data từ tour:', { latitude, longitude, mapAddress });
+            
+            if (latitude && longitude) {
+                $('#latitude').val(latitude);
+                $('#longitude').val(longitude);
+                console.log('✅ Đã load tọa độ map vào form:', latitude, longitude);
+                
+                // Update map nếu có mapbox map đã được khởi tạo
+                // Đợi map khởi tạo xong (có thể mất vài giây)
+                const tryUpdateMap = (attempts = 0) => {
+                    if (attempts > 10) {
+                        console.warn('⚠️ Map chưa khởi tạo sau 5 giây, bỏ qua update map');
+                        return;
+                    }
+                    
+                    if (typeof window.setMapLocation === 'function' && typeof map !== 'undefined' && map) {
+                        console.log('✅ Map đã sẵn sàng, cập nhật marker...');
+                        window.setMapLocation(parseFloat(latitude), parseFloat(longitude), mapAddress || '');
+                    } else if (typeof window.loadMapData === 'function') {
+                        console.log('✅ Gọi loadMapData...');
+                        window.loadMapData(tour);
+                    } else {
+                        // Thử lại sau 500ms
+                        setTimeout(() => tryUpdateMap(attempts + 1), 500);
+                    }
+                };
+                
+                // Bắt đầu thử update map sau 1 giây (để map có thời gian khởi tạo)
+                setTimeout(() => tryUpdateMap(), 1000);
+            } else {
+                console.warn('⚠️ Tour không có map data (latitude/longitude)');
+            }
+            
+            if (mapAddress) {
+                $('#map_address').val(mapAddress);
+                console.log('✅ Đã load địa chỉ map:', mapAddress);
+            }
+            
             // Log trạng thái form sau khi điền dữ liệu
             console.log('Form đã được điền dữ liệu:', {
                 maTour: $('#ma_tour').val(),
@@ -136,13 +179,16 @@ $(document).ready(function() {
     // Load danh sách địa danh và lịch khởi hành
     loadDiaDanh().then(() => {
         if (editTourId) {
-            // Nếu đang chỉnh sửa, đánh dấu các địa danh đã chọn
-            const tourData = JSON.parse(localStorage.getItem('editTourData'));
-            if (tourData && tourData.Dia_danh) {
-                tourData.Dia_danh.forEach(dd => {
-                    $(`#dd-${dd.Ma_dia_danh || dd.ma_dia_danh}`).prop('checked', true);
-                });
-            }
+            // Nếu đang chỉnh sửa, load địa danh từ API (ưu tiên hơn localStorage)
+            loadTourDestinationsForEdit(editTourId).then(() => {
+                // Fallback: Nếu API không có, dùng localStorage
+                const tourData = JSON.parse(localStorage.getItem('editTourData'));
+                if (tourData && tourData.Dia_danh && $('input[name="dia_danh"]:checked').length === 0) {
+                    tourData.Dia_danh.forEach(dd => {
+                        $(`#dd-${dd.Ma_dia_danh || dd.ma_dia_danh}`).prop('checked', true);
+                    });
+                }
+            });
         }
     });
     
@@ -180,6 +226,29 @@ $(document).ready(function() {
             e.stopImmediatePropagation();
             return false;
         }
+        
+        // Kiểm tra xem có đang ở step preview không
+        // Chỉ redirect nếu không phải submit từ preview
+        const isFromPreview = window.submitFromPreview === true;
+        
+        if (!isFromPreview) {
+            if (typeof currentStep !== 'undefined' && currentStep !== 8) {
+                // Nếu chưa ở step preview, chuyển đến preview
+                console.log('⚠️ Chưa ở step 8, chuyển đến preview...');
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                if (typeof goToStep === 'function') {
+                    goToStep(8);
+                }
+                return false;
+            }
+        } else {
+            console.log('✅ Submit từ preview (step 8), tiếp tục quy trình...');
+        }
+        
+        // Reset flag sau khi kiểm tra
+        window.submitFromPreview = false;
         
         e.preventDefault();
         
@@ -235,10 +304,23 @@ $(document).ready(function() {
                 const maTour = tourData.Ma_tour;
                 console.log('Mã tour:', maTour);
                 
-                // 3. Thêm địa danh cho tour (không bắt buộc)
-                console.log('3. Thêm địa danh cho tour...');
+                // 3. Cập nhật địa danh cho tour (không bắt buộc)
+                console.log('3. Cập nhật địa danh cho tour...');
                 try {
                     const selectedDiaDanh = $('input[name="dia_danh"]:checked');
+                    
+                    if (isEditMode) {
+                        // Khi update: Xóa tất cả địa danh cũ trước, rồi thêm mới
+                        console.log('Đang xóa địa danh cũ...');
+                        try {
+                            await deleteAllDestinationsFromTour(maTour);
+                            console.log('Đã xóa địa danh cũ thành công');
+                        } catch (deleteError) {
+                            console.warn('Lỗi khi xóa địa danh cũ (có thể không có địa danh nào):', deleteError);
+                            // Tiếp tục dù có lỗi
+                        }
+                    }
+                    
                     if (selectedDiaDanh.length > 0) {
                         const diaDanhResult = await addDiaDanhToTour(maTour);
                         console.log('Kết quả thêm địa danh:', diaDanhResult);
@@ -274,6 +356,18 @@ $(document).ready(function() {
                 // 5. Hoàn thành
                 console.log(`=== HOÀN THÀNH QUY TRÌNH ${isEditMode ? 'CẬP NHẬT' : 'LƯU'} TOUR ===`);
                 console.log('Kết quả tổng thể:', results);
+                
+                // Clear draft khi submit thành công
+                if (typeof clearDraft === 'function') {
+                    clearDraft();
+                }
+                
+                // Đánh dấu tất cả các step là completed
+                if (typeof markStepCompleted === 'function') {
+                    for (let i = 1; i <= 7; i++) {
+                        markStepCompleted(i);
+                    }
+                }
                 
                 // Tạo thông báo tổng hợp
                 let summaryMessage = isEditMode 
@@ -539,6 +633,9 @@ $(document).ready(function() {
             // Xóa dữ liệu trong form sau khi lưu
             document.getElementById('addScheduleForm').reset();
 
+            // Thêm lịch mới vào dropdown ở bước 6 (nếu có)
+            addScheduleToItineraryDropdown(formData);
+
             // Hiển thị thông báo
             alert(`Đã tạo lịch khởi hành ${formData.ma_lich}. Lịch này sẽ được lưu khi bạn lưu tour.`);
         } catch (error) {
@@ -570,6 +667,79 @@ $(document).ready(function() {
 });
 
 // Hàm load danh sách địa danh
+/**
+ * Load địa danh của tour từ API (dùng khi edit)
+ */
+async function loadTourDestinationsForEdit(maTour) {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.warn('Không có token, bỏ qua load địa danh từ API');
+            return;
+        }
+        
+        const response = await fetch(`http://localhost:5000/api/tours/${maTour}/destinations`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.status === 'success' && data.data && data.data.destinations) {
+                // Đánh dấu các địa danh đã chọn
+                data.data.destinations.forEach(dest => {
+                    const maDiaDanh = dest.Ma_dia_danh || dest.ma_dia_danh;
+                    $(`#dd-${maDiaDanh}`).prop('checked', true);
+                });
+                console.log(`Đã load ${data.data.destinations.length} địa danh từ API`);
+            }
+        }
+    } catch (error) {
+        console.error('Lỗi khi load địa danh từ API:', error);
+    }
+}
+
+/**
+ * Load địa danh của tour từ API (dùng khi edit)
+ */
+async function loadTourDestinationsForEdit(maTour) {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.warn('Không có token, bỏ qua load địa danh từ API');
+            return;
+        }
+        
+        const response = await fetch(`http://localhost:5000/api/tours/${maTour}/destinations`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.status === 'success' && data.data && data.data.destinations) {
+                // Đánh dấu các địa danh đã chọn
+                data.data.destinations.forEach(dest => {
+                    const maDiaDanh = dest.Ma_dia_danh || dest.ma_dia_danh;
+                    const checkbox = $(`#dd-${maDiaDanh}`);
+                    if (checkbox.length) {
+                        checkbox.prop('checked', true);
+                    }
+                });
+                console.log(`✅ Đã load ${data.data.destinations.length} địa danh từ API`);
+            }
+        } else {
+            console.warn('Không thể load địa danh từ API, status:', response.status);
+        }
+    } catch (error) {
+        console.error('Lỗi khi load địa danh từ API:', error);
+    }
+}
+
 async function loadDiaDanh() {
     try {
         console.log('Đang gọi API lấy danh sách địa danh...');
@@ -901,9 +1071,26 @@ async function createTour() {
             throw new Error('Loại tour không hợp lệ');
         }
 
+        // Lấy map data từ form (nếu có)
+        const latitude = $('#latitude').val()?.trim();
+        const longitude = $('#longitude').val()?.trim();
+        const mapAddress = $('#map_address').val()?.trim();
+        
+        console.log('🔍 Map data từ form:', { latitude, longitude, mapAddress });
+        
+        // Validate map data nếu có
+        if (latitude && longitude) {
+            const latNum = parseFloat(latitude);
+            const lngNum = parseFloat(longitude);
+            if (isNaN(latNum) || isNaN(lngNum)) {
+                console.warn('⚠️ Map coordinates không hợp lệ:', latitude, longitude);
+            } else {
+                console.log('✅ Map coordinates hợp lệ:', latNum, lngNum);
+            }
+        }
+
         // Chuẩn bị dữ liệu JSON
         const tourData = {
-            ma_tour: maTour,
             ten_tour: tenTour,
             thoi_gian: thoiGian,
             tinh_trang: tinhTrang,
@@ -912,8 +1099,17 @@ async function createTour() {
             loai_tour: loaiTour,
             mo_ta: moTaFinal,
             Mo_ta: moTaFinal,  // Thêm tên trường viết hoa để tương thích với cả hai trường hợp
-            description: moTaFinal  // Thử thêm một tên trường khác
+            description: moTaFinal,  // Thử thêm một tên trường khác
+            // Mapbox data
+            latitude: latitude || null,
+            longitude: longitude || null,
+            map_address: mapAddress || null
         };
+
+        // Chỉ thêm ma_tour khi tạo mới (không thêm khi update)
+        if (!isEditMode) {
+            tourData.ma_tour = maTour;
+        }
 
         // Bước 1: Upload hình ảnh nếu có
         let hinhAnhUrl = null;
@@ -1055,6 +1251,51 @@ async function createTour() {
 }
 
 // Hàm thêm địa danh vào tour
+/**
+ * Xóa tất cả địa danh của tour (dùng khi update)
+ */
+async function deleteAllDestinationsFromTour(maTour) {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            throw new Error('Vui lòng đăng nhập lại để thực hiện chức năng này');
+        }
+        
+        // Lấy danh sách địa danh hiện tại của tour
+        const response = await fetch(`http://localhost:5000/api/tours/${maTour}/destinations`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.status === 'success' && data.data && data.data.destinations) {
+                // Xóa từng địa danh
+                for (const dest of data.data.destinations) {
+                    const maDiaDanh = dest.Ma_dia_danh || dest.ma_dia_danh;
+                    try {
+                        await fetch(`http://localhost:5000/api/tours/${maTour}/destinations/${maDiaDanh}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        console.log(`Đã xóa địa danh ${maDiaDanh}`);
+                    } catch (error) {
+                        console.warn(`Lỗi khi xóa địa danh ${maDiaDanh}:`, error);
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Lỗi khi xóa địa danh:', error);
+        throw error;
+    }
+}
+
 async function addDiaDanhToTour(maTour) {
     try {
         if (!maTour) {
@@ -1328,16 +1569,30 @@ function initItineraryManagement() {
     // Lắng nghe sự kiện chọn lịch khởi hành
     $('#selectScheduleForItinerary').on('change', function() {
         const maLich = $(this).val();
+        
         if (maLich) {
             currentScheduleId = maLich;
             loadItineraryForSchedule(maLich);
             $('#itineraryFormContainer').show();
+            
+            // Enable step 6 khi chọn lịch khởi hành
+            if (typeof handleItineraryStep === 'function') {
+                handleItineraryStep();
+            }
+            
             // Chờ một chút để form được render xong rồi mới reset
             setTimeout(() => {
                 resetItineraryForm(); // Reset form khi chọn lịch mới
             }, 100);
         } else {
             currentScheduleId = null;
+            
+            // Disable step 6 khi không có lịch khởi hành
+            const step6 = document.querySelector('.step[data-step="6"]');
+            if (step6) {
+                step6.classList.add('disabled');
+            }
+            
             $('#itineraryListContainer').html(`
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
@@ -1390,6 +1645,63 @@ function initItineraryManagement() {
 /**
  * Load danh sách lịch khởi hành vào dropdown
  */
+/**
+ * Thêm lịch khởi hành mới vào dropdown ở bước 6
+ * Export để có thể gọi từ tour-stepper.js
+ */
+function addScheduleToItineraryDropdown(scheduleData) {
+    const selectSchedule = $('#selectScheduleForItinerary');
+    
+    if (selectSchedule.length === 0) {
+        console.log('⚠️ Dropdown selectScheduleForItinerary chưa tồn tại');
+        return;
+    }
+    
+    // Kiểm tra xem lịch đã có trong dropdown chưa
+    const existingOption = selectSchedule.find(`option[value="${scheduleData.ma_lich}"]`);
+    if (existingOption.length > 0) {
+        console.log(`✅ Lịch ${scheduleData.ma_lich} đã có trong dropdown`);
+        // Tự động chọn lịch này
+        selectSchedule.val(scheduleData.ma_lich).trigger('change');
+        return;
+    }
+    
+    // Format ngày để hiển thị
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN');
+    };
+    
+    const displayText = `${scheduleData.ma_lich} (${formatDate(scheduleData.ngay_bat_dau)} - ${formatDate(scheduleData.ngay_ket_thuc)}) [Mới]`;
+    
+    // Thêm option mới vào dropdown
+    const newOption = $('<option></option>')
+        .attr('value', scheduleData.ma_lich)
+        .text(displayText)
+        .attr('data-temp', 'true'); // Đánh dấu là lịch tạm thời
+    
+    // Thêm vào sau option đầu tiên (option "-- Chọn lịch khởi hành --")
+    if (selectSchedule.find('option').length > 0) {
+        selectSchedule.find('option:first').after(newOption);
+    } else {
+        selectSchedule.append(newOption);
+    }
+    
+    // Tự động chọn lịch vừa tạo
+    selectSchedule.val(scheduleData.ma_lich).trigger('change');
+    
+    console.log(`✅ Đã thêm lịch ${scheduleData.ma_lich} vào dropdown và tự động chọn`);
+    
+    // Enable step 6 nếu đang ở bước 6 hoặc sắp đến bước 6
+    if (typeof handleItineraryStep === 'function') {
+        handleItineraryStep();
+    }
+}
+
+// Export function để có thể gọi từ tour-stepper.js
+window.addScheduleToItineraryDropdown = addScheduleToItineraryDropdown;
+
 function loadSchedulesForItinerary() {
     const selectSchedule = $('#selectScheduleForItinerary');
     
@@ -1469,6 +1781,18 @@ async function loadSchedulesFromAPI(maTour) {
                 });
                 
                 console.log(`Đã load ${data.data.schedules.length} lịch khởi hành vào dropdown`);
+                
+                // Enable step 6 nếu có lịch khởi hành
+                if (data.data.schedules.length > 0 && typeof handleItineraryStep === 'function') {
+                    // Đợi một chút để dropdown được render xong
+                    setTimeout(() => {
+                        handleItineraryStep();
+                        // Nếu đang ở step 6, cập nhật lại UI
+                        if (typeof currentStep !== 'undefined' && currentStep === 6) {
+                            // Không cần làm gì, chỉ cần enable step 6
+                        }
+                    }, 200);
+                }
             } else {
                 console.warn('API response không có dữ liệu schedules:', data);
             }
