@@ -118,6 +118,41 @@
         background-color: var(--white-color);
         scroll-behavior: smooth;
         overflow-x: hidden;
+        -webkit-font-smoothing: antialiased; /* Tối ưu font rendering */
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility; /* Tối ưu text rendering */
+      }
+      
+      /* Tối ưu scroll performance */
+      html {
+        -webkit-overflow-scrolling: touch; /* Smooth scroll trên iOS */
+        scroll-behavior: smooth;
+      }
+      
+      /* ============================================
+         OVERLAP SMOOTH SCROLL - Hero → Tour Section
+         ============================================ */
+      
+      /* ============================================
+         OVERLAP SMOOTH SCROLL - Hero → Tour Section
+         ============================================ */
+      
+      /* Container chính cho scroll snap - Tắt tạm thời để dùng JS control */
+      /* body {
+        scroll-snap-type: y mandatory;
+      } */
+      
+      /* Hero Section - Đảm bảo full height */
+      .hero-section {
+        min-height: 100vh;
+        position: relative;
+        z-index: 10; /* Cao hơn Tour Section để tạo overlap premium */
+      }
+      
+      /* Tour Section - Overlap với Hero */
+      .tour-section-fullwidth {
+        position: relative;
+        z-index: 5; /* Thấp hơn Hero */
       }
 
       h1, h2, h3, h4, h5, h6 {
@@ -2365,484 +2400,527 @@
         border-radius: var(--radius-lg);
       }
 
-      /* Modern 3D Image Slider */
+      /* Smooth Scroll - Toàn trang */
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        scroll-behavior: smooth;
+      }
+
+      /* Tour Section - Full Width với Overlap Premium */
+      .tour-section-fullwidth {
+        position: relative;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: visible; /* Cho phép overflow để overlap */
+        margin-top: -150px; /* Overlap với Hero - trượt lên từ dưới */
+        z-index: 5; /* Thấp hơn Hero (z-index: 10) nhưng cao hơn header tour để slider hiển thị */
+        padding-top: 150px; /* Bù lại margin-top âm để nội dung không bị che */
+      }
+
+      /* Header Section - Overlay trên slider */
+      .section-header-tour {
+        position: absolute;
+        top: 80px;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+        padding: 40px 0;
+        pointer-events: none; /* Không chặn scroll events */
+      }
+
+      .section-header-tour .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 15px;
+      }
+
+      .section-header-tour h2 {
+        font-size: 4rem;
+        font-weight: 800;
+        text-align: center;
+        color: #ffffff;
+        margin: 0;
+        text-shadow: 4px 4px 8px rgba(0,0,0,0.7);
+      }
+
+      .section-header-tour p {
+        display: none;
+      }
+
+      /* Tour Slider Container - Full Width Edge-to-Edge */
       .tour-slider-container {
         position: relative;
+        width: 100vw;
+        margin-left: calc(-50vw + 50%);
+        margin-right: calc(-50vw + 50%);
+        overflow: hidden;
+        z-index: 6; /* Nằm trên Tour Section (z-index: 5) để slider hiển thị rõ, nhưng dưới Hero (z-index: 10) */
+      }
+
+      /* Slider Section - Full Screen */
+      .tour-slider-container .slider {
+        height: 100vh;
         width: 100%;
-        height: 600px;
-        margin: 50px 0;
-        display: flex;
-        gap: 3rem;
-        align-items: center;
-        background: transparent;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        position: relative;
         border-radius: 0;
-        box-shadow: none;
-        overflow: visible;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        pointer-events: auto; /* Đảm bảo không chặn scroll events */
       }
-      
-      /* Detail Panel - Left Content Area */
-      .tour-detail-panel {
-        flex: 0 0 450px;
-        height: 100%;
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 25px;
-        padding: 3rem;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        overflow: hidden;
-      }
-      
-      /* Background image cho detail panel */
-      .tour-detail-panel::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-        border-radius: 25px;
-        z-index: 1;
-      }
-      
-      .tour-detail-content {
-        text-align: left;
-        width: 100%;
-        position: relative;
-        z-index: 2;
-      }
-      
-      .detail-title {
-        font-size: 2.5rem;
-        font-weight: 800;
-        color: #2d3748;
-        margin-bottom: 1.5rem;
-        line-height: 1.2;
-        letter-spacing: -0.02em;
-      }
-      
-      .detail-description {
-        font-size: 1.1rem;
-        color: #4a5568;
-        line-height: 1.7;
-        margin-bottom: 2rem;
-        display: -webkit-box;
-        -webkit-line-clamp: 4;
-        line-clamp: 4;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-      }
-      
-      .detail-rating {
-        margin-bottom: 2rem;
-      }
-      
-      .detail-rating .stars {
-        display: flex;
-        gap: 0.3rem;
-        margin-bottom: 0.8rem;
-      }
-      
-      .detail-rating .stars i {
-        color: #f6ad55;
-        font-size: 1.3rem;
-      }
-      
-      .detail-rating .rating-text {
-        font-size: 1rem;
-        color: #718096;
-        font-weight: 500;
-      }
-      
-      .detail-price {
-        margin-bottom: 2.5rem;
-      }
-      
-      .detail-price .price {
-        font-size: 2.2rem;
-        font-weight: 800;
-        color: #667eea;
-        margin-bottom: 0.5rem;
-      }
-      
-      .detail-price .price-label {
-        font-size: 1rem;
-        color: #718096;
-        font-weight: 500;
-      }
-      
-      .detail-btn {
-        padding: 1rem 2.5rem;
-        font-size: 1rem;
-        font-weight: 600;
-        border-radius: 50px;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        color: white;
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        border: none;
-        display: inline-block;
-      }
-      
-      .detail-btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
-        color: white;
-        text-decoration: none;
-      }
-      
-      /* 3D Slider Wrapper */
-      .tour-slider-wrapper {
-        flex: 1;
-        position: relative;
-        height: 100%;
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-        border-radius: 25px;
-        overflow: hidden;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        transition: background-image 0.5s ease-in-out;
-        perspective: 1000px;
-      }
-      
-      .tour-slider {
+
+      .tour-slider-container .slider .list .item {
         width: 100%;
         height: 100%;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        z-index: 5;  /* Đảm bảo nằm trên WebGL background */
-      }
-      
-      .tour-slider-item {
         position: absolute;
-        width: 350px;
-        height: 450px;
-        background-position: center center;
-        background-size: cover;
-        border-radius: 20px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        cursor: pointer;
-        transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
-                    opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
-                    filter 0.8s cubic-bezier(0.4, 0, 0.2, 1),
-                    box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        transform-style: preserve-3d;
-        border: 3px solid rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(5px);
-        pointer-events: auto;
-        will-change: transform, opacity;
-      }
-      
-      /* Center image (active) - moved to top right */
-      .tour-slider-item.active {
-        transform: scale(1.1) translateZ(50px) translateX(150px) translateY(-100px);
-        z-index: 3;
-        opacity: 1;
-        filter: none;
-      }
-      
-      /* Center image khi hover - ở chính giữa slider */
-      .tour-slider-item.active-center {
-        transform: scale(1.2) translateZ(50px);
-        z-index: 3;
-        opacity: 1;
-        filter: none;
-      }
-      
-      /* Left image - moved to top right area */
-      .tour-slider-item.left {
-        transform: rotateY(-15deg) translateX(50px) translateY(-80px) scale(0.7);
-        z-index: 1;
-        opacity: 0.5;
-        filter: blur(3px);
-      }
-      
-      /* Right image - moved to top right area */
-      .tour-slider-item.right {
-        transform: rotateY(15deg) translateX(250px) translateY(-60px) scale(0.7);
-        z-index: 1;
-        opacity: 0.5;
-        filter: blur(3px);
-      }
-      
-      /* Hidden images - tắt transition để ẩn ngay lập tức */
-      .tour-slider-item.hidden {
-        transform: scale(0.5);
+        inset: 0 0 0 0;
         opacity: 0;
-        z-index: 0;
-        pointer-events: none;
-        visibility: hidden;
-        transition: none !important;
-      }
-      
-      /* Hover effects - adjusted for new position */
-      .tour-slider-item.active:hover {
-        transform: scale(1.15) translateZ(60px) translateX(150px) translateY(-100px);
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
-      }
-      
-      .tour-slider-item.active-center:hover {
-        transform: scale(1.25) translateZ(60px);
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
-      }
-      
-      .tour-slider-item.left:hover,
-      .tour-slider-item.right:hover {
-        opacity: 0.7;
-        filter: blur(2px);
-      }
-      
-      /* Content overlay - adjusted for top right position */
-      .tour-slider-content {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
-        color: white;
-        padding: 1.5rem;
-        border-radius: 0 0 20px 20px;
-        transform: translateY(100%);
-        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        font-size: 0.9rem;
-      }
-      
-      .tour-slider-item.active .tour-slider-content,
-      .tour-slider-item.active-center .tour-slider-content {
-        transform: translateY(0);
+        transition: opacity 1s ease-in-out;
       }
 
-      .tour-slider-title {
-        font-size: 1.4rem;
-        font-weight: 700;
-        margin-bottom: 0.3rem;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      .tour-slider-container .slider .list .item.active {
+        opacity: 1;
+        z-index: 1;
       }
 
-      .tour-slider-description {
-        font-size: 0.8rem;
-        opacity: 0.9;
-        line-height: 1.4;
-        margin-bottom: 0.5rem;
+      /* Image with blur and brightness */
+      .tour-slider-container .slider .list .item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: blur(2px) brightness(0.7);
+        transition: filter 0.5s ease;
       }
 
-      .tour-slider-price {
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: #f6ad55;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      .tour-slider-container .slider .list .item.active img {
+        filter: blur(1px) brightness(0.75);
       }
 
-      .tour-slider-btn {
-        padding: 0.5rem 1rem;
-        border: none;
-        border-radius: 20px;
-        background: rgba(255, 255, 255, 0.2);
-        color: white;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        text-decoration: none;
-        display: inline-block;
-        margin-top: 0.5rem;
-        font-size: 0.8rem;
-      }
-
-      .tour-slider-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
-        color: white;
-        text-decoration: none;
-      }
-
-      @keyframes showContent {
-        from {
-          opacity: 0;
-          transform: translate(0, 100px);
-          filter: blur(33px);
-        }
-        to {
-          opacity: 1;
-          transform: translate(0, 0);
-          filter: blur(0);
-        }
-      }
-
-      .slider-controls {
+      /* Content - Left Aligned, Centered Vertically */
+      .tour-slider-container .slider .list .item .content {
         position: absolute;
         top: 50%;
-        left: 0;
-        right: 0;
+        left: 10%;
         transform: translateY(-50%);
-        z-index: 10;
-        display: flex;
-        justify-content: space-between;
-        padding: 0 30px;
-        pointer-events: none;
+        width: auto;
+        max-width: 50%;
+        z-index: 2;
+        color: #fff;
+        text-align: left;
       }
 
-      .slider-btn {
+      /* Title - 5rem, Bold, Uppercase, White */
+      .tour-slider-container .slider .list .item .content .title {
+        font-size: 5rem;
+        font-weight: 800;
+        line-height: 1.2;
+        text-transform: uppercase;
+        color: #ffffff;
+        margin: 0 0 20px 0;
+        text-shadow: 4px 4px 8px rgba(0,0,0,0.7);
+        letter-spacing: 2px;
+      }
+
+      /* Type - 2.5rem, Neon Green */
+      .tour-slider-container .slider .list .item .content .type {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: #00ff88;
+        margin: 0 0 25px 0;
+        text-shadow: 4px 4px 8px rgba(0,0,0,0.7);
+        letter-spacing: 1px;
+      }
+
+      /* Description - 1.2rem, White with opacity */
+      .tour-slider-container .slider .list .item .content .description {
+        font-size: 1.2rem;
+        line-height: 1.6;
+        margin: 0 0 35px 0;
+        color: rgba(255, 255, 255, 0.9);
+        text-shadow: 4px 4px 8px rgba(0,0,0,0.7);
+        max-width: 600px;
+      }
+
+      /* CTA Button - White Background, Black Text */
+      .tour-slider-container .slider .list .item .content .button {
+        display: flex;
+        gap: 15px;
+        margin-top: 0;
+      }
+
+      .tour-slider-container .slider .list .item .content .button button {
+        padding: 16px 40px;
+        background-color: #ffffff;
+        border: none;
+        color: #000000;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        letter-spacing: 1px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .tour-slider-container .slider .list .item .content .button button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+      }
+
+      /* Thumbnail Section - Bottom Right */
+      .tour-slider-container .thumbnail {
+        position: absolute;
+        bottom: 50px;
+        right: 50px;
+        z-index: 100;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        flex-direction: row;
+        justify-content: flex-end;
+      }
+
+      .tour-slider-container .thumbnail .item {
+        width: 120px;
+        height: 160px;
+        flex-shrink: 0;
+        position: relative;
+        cursor: pointer;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+        background: #fff;
+        border: 2px solid transparent;
+      }
+
+      .tour-slider-container .thumbnail .item.active {
+        border-color: #00ff88;
+        transform: scale(1.1);
+      }
+
+      .tour-slider-container .thumbnail .item:hover {
+        transform: translateY(-10px) scale(1.05);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+      }
+
+      .tour-slider-container .thumbnail .item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 13px;
+        display: block;
+      }
+
+      /* Next/Prev Arrows - Bottom Left */
+      .tour-slider-container .nextPrevArrows {
+        position: absolute;
+        bottom: 50px;
+        left: 50px;
+        z-index: 100;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+      }
+
+      .tour-slider-container .nextPrevArrows button {
         width: 60px;
         height: 60px;
         border-radius: 50%;
-        border: 2px solid rgba(255, 255, 255, 0.8);
-        background: rgba(255, 255, 255, 0.1);
-        color: white;
-        font-size: 1.5rem;
+        background-color: #00ff88;
+        border: none;
+        color: #ffffff;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+        transition: all 0.3s ease;
         cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        backdrop-filter: blur(10px);
+        font-size: 24px;
         display: flex;
         align-items: center;
         justify-content: center;
-        pointer-events: all;
-        font-weight: bold;
+        box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
       }
 
-      .slider-btn:hover {
-        background: rgba(255, 255, 255, 0.2);
-        border-color: rgba(255, 255, 255, 1);
+      .tour-slider-container .nextPrevArrows button:hover {
+        background-color: #00cc6a;
         transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(0, 255, 136, 0.5);
       }
-      
-      .slider-btn:active {
-        transform: scale(0.95);
+
+      /* Animation xuất hiện nội dung (text fade-in + slide-up) cho slide đầu tiên */
+      .tour-slider-container .slider .list .item:nth-child(1) .content .title,
+      .tour-slider-container .slider .list .item:nth-child(1) .content .type,
+      .tour-slider-container .slider .list .item:nth-child(1) .content .description,
+      .tour-slider-container .slider .list .item:nth-child(1) .content .button {
+        transform: translateY(50px);
+        filter: blur(20px);
+        opacity: 0;
+        animation: showContent .5s 1s linear 1 forwards;
       }
-      
-      /* Auto-play indicator */
-      .slider-progress {
+
+      @keyframes showContent {
+        to {
+          transform: translateY(0px);
+          filter: blur(0px);
+          opacity: 1;
+        }
+      }
+
+      .tour-slider-container .slider .list .item:nth-child(1) .content .title {
+        animation-delay: 0.4s !important;
+      }
+
+      .tour-slider-container .slider .list .item:nth-child(1) .content .type {
+        animation-delay: 0.6s !important;
+      }
+
+      .tour-slider-container .slider .list .item:nth-child(1) .content .description {
+        animation-delay: 0.8s !important;
+      }
+
+      .tour-slider-container .slider .list .item:nth-child(1) .content .button {
+        animation-delay: 1s !important;
+      }
+
+      /* Animation khi NEXT - ảnh thu nhỏ → phóng to thành slide chính */
+      .tour-slider-container .slider.next .list .item:nth-child(1) img {
+        width: 150px;
+        height: 220px;
         position: absolute;
-        bottom: 20px;
+        bottom: 50px;
         left: 50%;
         transform: translateX(-50%);
-        width: 200px;
-        height: 4px;
-        background: rgba(255, 255, 255, 0.3);
-        border-radius: 2px;
-        overflow: hidden;
-        z-index: 10;
-      }
-      
-      .slider-progress-bar {
-        height: 100%;
-        background: linear-gradient(90deg, #667eea, #764ba2);
-        border-radius: 2px;
-        transition: width 0.1s linear;
+        border-radius: 30px;
+        animation: showImage .5s linear 1 forwards;
       }
 
-      /* Responsive Design */
-      @media screen and (max-width: 1200px) {
-        .tour-slider-container {
-          height: 500px;
-          flex-direction: column;
-          gap: 1rem;
-        }
-        
-        .tour-detail-panel {
-          flex: 0 0 200px;
+      @keyframes showImage {
+        to {
+        bottom: 0;
+        left: 0;
           width: 100%;
-          padding: 1rem;
+          height: 100%;
+          border-radius: 0;
+          transform: translateX(0);
         }
-        
-        .tour-slider-wrapper {
-          flex: 1;
-          height: 300px;
+      }
+
+      /* Animation thumbnail xuất hiện khi NEXT */
+      .tour-slider-container .slider.next .thumbnail .item:nth-last-child(1) {
+        overflow: hidden;
+        animation: showThumbnail .5s linear 1 forwards;
+      }
+
+      @keyframes showThumbnail {
+        from {
+          width: 0;
+          opacity: 0;
         }
-        
-        .detail-title {
-          font-size: 1.4rem;
+        to {
+          width: 120px;
+          opacity: 1;
         }
-        
-        .detail-description {
-          font-size: 0.9rem;
-          -webkit-line-clamp: 2;
-          line-clamp: 2;
-          display: -webkit-box;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
+      }
+
+      /* Animation toàn bộ thumbnail di chuyển khi NEXT */
+      .tour-slider-container .slider.next .thumbnail {
+        animation: effectNext .5s linear 1 forwards;
+      }
+
+      @keyframes effectNext {
+        from {
+          transform: translateX(150px);
         }
-        
-        .detail-price .price {
+        to {
+          transform: translateX(0);
+        }
+      }
+
+      /* Animation khi PREV - ảnh đang chiếm màn hình → thu nhỏ về thumbnail */
+      .tour-slider-container .slider.prev .list .item:nth-child(2) {
+        z-index: 2;
+      }
+
+      .tour-slider-container .slider.prev .list .item:nth-child(2) img {
+        animation: outFrame 0.5s linear 1 forwards;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+      }
+
+      @keyframes outFrame {
+        to {
+          width: 150px;
+          height: 220px;
+          bottom: 50px;
+          left: 50%;
+          transform: translateX(-50%);
+          border-radius: 20px;
+        }
+      }
+
+      /* Thumbnail cũ bị ẩn đi khi PREV */
+      .tour-slider-container .slider.prev .thumbnail .item:nth-child(1) {
+        overflow: hidden;
+        opacity: 0;
+        animation: showThumbnail .5s linear 1 forwards;
+      }
+
+      /* Nội dung (text) bị kéo lên + mờ dần khi PREV */
+      .tour-slider-container .slider.prev .list .item:nth-child(2) .content .title,
+      .tour-slider-container .slider.prev .list .item:nth-child(2) .content .type,
+      .tour-slider-container .slider.prev .list .item:nth-child(2) .content .description,
+      .tour-slider-container .slider.prev .list .item:nth-child(2) .content .button {
+        animation: contentOut 1.5s linear 1 forwards !important;
+      }
+
+      @keyframes contentOut {
+        to {
+          transform: translateY(-150px);
+          filter: blur(20px);
+          opacity: 0;
+        }
+      }
+
+      /* Disable pointer events during animation */
+      .tour-slider-container .slider.next .nextPrevArrows button,
+      .tour-slider-container .slider.prev .nextPrevArrows button {
+        pointer-events: none;
+      }
+
+      /* Active item styling */
+      .tour-slider-container .slider .list .item.active {
+        opacity: 1;
+        z-index: 1;
+      }
+
+      .tour-slider-container .slider .list .item:not(.active) {
+        opacity: 0;
+        z-index: 0;
+      }
+
+      /* Responsive Design - Tablet */
+      @media screen and (max-width: 1200px) {
+        .section-header-tour h2 {
+          font-size: 3rem;
+        }
+
+        .tour-slider-container .slider .list .item .content {
+          left: 8%;
+          max-width: 55%;
+        }
+
+        .tour-slider-container .slider .list .item .content .title {
+          font-size: 4rem;
+        }
+
+        .tour-slider-container .slider .list .item .content .type {
+          font-size: 2rem;
+        }
+
+        .tour-slider-container .thumbnail {
+          bottom: 40px;
+          right: 40px;
+        }
+
+        .tour-slider-container .thumbnail .item {
+          width: 100px;
+          height: 133px;
+        }
+      }
+
+      /* Responsive Design - Mobile */
+      @media screen and (max-width: 768px) {
+        .section-header-tour {
+          top: 60px;
+          padding: 30px 0;
+        }
+
+        .section-header-tour h2 {
+          font-size: 2.5rem;
+        }
+
+        .tour-slider-container .slider .list .item .content {
+          left: 5%;
+          max-width: 90%;
+        }
+
+        .tour-slider-container .slider .list .item .content .title {
+          font-size: 2.5rem;
+        }
+
+        .tour-slider-container .slider .list .item .content .type {
           font-size: 1.5rem;
         }
-        
-        .detail-btn {
-          padding: 0.5rem 1.5rem;
-          font-size: 0.9rem;
-        }
-        
-        .tour-slider-content {
-          width: 350px;
-          left: 80px;
-        }
-        
-        .tour-slider-title {
-          font-size: 32px;
-        }
-      }
 
-      @media screen and (max-width: 768px) {
-        .tour-slider-container {
-          height: 400px;
-          margin: 30px 0;
+        .tour-slider-container .slider .list .item .content .description {
+          font-size: 1rem;
+          margin-bottom: 25px;
         }
-        
-        .tour-slider-content {
-          width: 300px;
-          left: 80px;
-        }
-        
-        .tour-slider-title {
-          font-size: 24px;
-        }
-        
-        .tour-slider-description {
+
+        .tour-slider-container .slider .list .item .content .button button {
+          padding: 12px 30px;
           font-size: 14px;
         }
         
-        .tour-slider-price {
+        .tour-slider-container .thumbnail {
+          bottom: 30px;
+          right: 30px;
+          gap: 10px;
+        }
+
+        .tour-slider-container .thumbnail .item {
+          width: 80px;
+          height: 107px;
+        }
+
+        .tour-slider-container .nextPrevArrows {
+          bottom: 30px;
+          left: 30px;
+          gap: 10px;
+        }
+
+        .tour-slider-container .nextPrevArrows button {
+          width: 50px;
+          height: 50px;
           font-size: 20px;
         }
       }
 
       @media screen and (max-width: 480px) {
-        .tour-slider-container {
-          height: 350px;
+        .section-header-tour h2 {
+          font-size: 2rem;
         }
-        
-        .tour-slider-content {
-          width: 250px;
-          left: 60px;
+
+        .tour-slider-container .slider .list .item .content .title {
+          font-size: 2rem;
         }
-        
-        .tour-slider-title {
-          font-size: 20px;
+
+        .tour-slider-container .slider .list .item .content .type {
+          font-size: 1.2rem;
         }
-        
-        .tour-slider-description {
-          font-size: 12px;
-          margin-bottom: 20px;
+
+        .tour-slider-container .slider .list .item .content .description {
+          font-size: 0.9rem;
         }
-        
-        .tour-slider-price {
+
+        .tour-slider-container .thumbnail .item {
+          width: 60px;
+          height: 80px;
+        }
+
+        .tour-slider-container .nextPrevArrows button {
+          width: 45px;
+          height: 45px;
           font-size: 18px;
-        }
-        
-        .tour-slider-btn {
-          padding: 10px 20px;
-          font-size: 14px;
         }
       }
 
@@ -2853,6 +2931,231 @@
 
       .mb-6 {
         margin-bottom: 4rem;
+      }
+
+      /* ============================================
+         SCROLL ANIMATIONS - Fade-in + Slide-up
+         ============================================ */
+      
+      /* Hero Section - Z-index cao để nằm trên Tour Section khi overlap (Premium Effect) */
+      .hero-section {
+        position: relative;
+        z-index: 10; /* Cao hơn Tour Section để tạo overlap premium */
+      }
+
+      /* Scroll Animation Classes - Tối ưu GPU Acceleration */
+      .scroll-animate {
+        opacity: 0;
+        transform: translate3d(0, 50px, 0); /* GPU acceleration */
+        transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                    transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        will-change: opacity, transform; /* Hint browser để tối ưu */
+        backface-visibility: hidden; /* Tối ưu rendering */
+        perspective: 1000px; /* 3D context */
+      }
+
+      .scroll-animate.animated {
+        opacity: 1;
+        transform: translate3d(0, 0, 0); /* GPU acceleration */
+        will-change: auto; /* Remove hint sau khi animated */
+      }
+
+      /* Delay cho các elements trong cùng section */
+      .scroll-animate-delay-1 {
+        transition-delay: 0.1s;
+      }
+
+      .scroll-animate-delay-2 {
+        transition-delay: 0.2s;
+      }
+
+      .scroll-animate-delay-3 {
+        transition-delay: 0.3s;
+      }
+
+      .scroll-animate-delay-4 {
+        transition-delay: 0.4s;
+      }
+
+      .scroll-animate-delay-5 {
+        transition-delay: 0.5s;
+      }
+
+      /* Sections sau Tour Section - Áp dụng scroll animation */
+      #destinations,
+      #about,
+      #testimonials,
+      #contact,
+      #myRatings {
+        position: relative;
+      }
+
+      #destinations .section-header,
+      #about .section-header,
+      #testimonials .section-header,
+      #contact .section-header,
+      #myRatings .section-header {
+        opacity: 0;
+        transform: translate3d(0, 30px, 0); /* GPU acceleration */
+        transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                    transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        will-change: opacity, transform;
+        backface-visibility: hidden;
+      }
+
+      #destinations .section-header.animated,
+      #about .section-header.animated,
+      #testimonials .section-header.animated,
+      #contact .section-header.animated,
+      #myRatings .section-header.animated {
+        opacity: 1;
+        transform: translate3d(0, 0, 0); /* GPU acceleration */
+        will-change: auto;
+      }
+
+      /* Cards và elements trong sections - Tối ưu GPU */
+      #destinations .row > *,
+      #about .row > *,
+      #testimonials .row > *,
+      #contact .row > * {
+        opacity: 0;
+        transform: translate3d(0, 40px, 0); /* GPU acceleration */
+        transition: opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                    transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        will-change: opacity, transform;
+        backface-visibility: hidden;
+      }
+
+      #destinations.animated .row > *,
+      #about.animated .row > *,
+      #testimonials.animated .row > *,
+      #contact.animated .row > * {
+        opacity: 1;
+        transform: translate3d(0, 0, 0); /* GPU acceleration */
+        will-change: auto;
+      }
+
+      /* Stagger animation cho cards */
+      #destinations.animated .row > *:nth-child(1),
+      #about.animated .row > *:nth-child(1),
+      #testimonials.animated .row > *:nth-child(1),
+      #contact.animated .row > *:nth-child(1) {
+        transition-delay: 0.1s;
+      }
+
+      #destinations.animated .row > *:nth-child(2),
+      #about.animated .row > *:nth-child(2),
+      #testimonials.animated .row > *:nth-child(2),
+      #contact.animated .row > *:nth-child(2) {
+        transition-delay: 0.2s;
+      }
+
+      #destinations.animated .row > *:nth-child(3),
+      #about.animated .row > *:nth-child(3),
+      #testimonials.animated .row > *:nth-child(3),
+      #contact.animated .row > *:nth-child(3) {
+        transition-delay: 0.3s;
+      }
+
+      #destinations.animated .row > *:nth-child(4),
+      #about.animated .row > *:nth-child(4),
+      #testimonials.animated .row > *:nth-child(4),
+      #contact.animated .row > *:nth-child(4) {
+        transition-delay: 0.4s;
+      }
+
+      #destinations.animated .row > *:nth-child(5),
+      #about.animated .row > *:nth-child(5),
+      #testimonials.animated .row > *:nth-child(5),
+      #contact.animated .row > *:nth-child(5) {
+        transition-delay: 0.5s;
+      }
+
+      #destinations.animated .row > *:nth-child(6),
+      #about.animated .row > *:nth-child(6),
+      #testimonials.animated .row > *:nth-child(6),
+      #contact.animated .row > *:nth-child(6) {
+        transition-delay: 0.6s;
+      }
+
+      /* Tối ưu performance cho scroll animations */
+      * {
+        -webkit-tap-highlight-color: transparent; /* Loại bỏ highlight khi tap trên mobile */
+      }
+      
+      /* Tối ưu rendering cho các sections */
+      #destinations,
+      #about,
+      #testimonials,
+      #contact,
+      #myRatings {
+        contain: layout style paint; /* CSS containment để tối ưu rendering */
+      }
+
+      /* Responsive - Giảm overlap trên mobile */
+      @media screen and (max-width: 768px) {
+        .tour-section-fullwidth {
+          margin-top: -80px;
+          padding-top: 80px;
+        }
+        
+        /* Giảm transition duration trên mobile để mượt hơn */
+        .scroll-animate,
+        #destinations .section-header,
+        #about .section-header,
+        #testimonials .section-header,
+        #contact .section-header,
+        #myRatings .section-header {
+          transition-duration: 0.6s;
+        }
+        
+        #destinations .row > *,
+        #about .row > *,
+        #testimonials .row > *,
+        #contact .row > * {
+          transition-duration: 0.5s;
+        }
+      }
+
+      @media screen and (max-width: 480px) {
+        .tour-section-fullwidth {
+          margin-top: -50px;
+          padding-top: 50px;
+        }
+        
+        /* Giảm transition duration trên mobile nhỏ hơn */
+        .scroll-animate,
+        #destinations .section-header,
+        #about .section-header,
+        #testimonials .section-header,
+        #contact .section-header,
+        #myRatings .section-header {
+          transition-duration: 0.5s;
+        }
+        
+        #destinations .row > *,
+        #about .row > *,
+        #testimonials .row > *,
+        #contact .row > * {
+          transition-duration: 0.4s;
+        }
+      }
+      
+      /* Tối ưu cho các thiết bị có GPU yếu */
+      @media (prefers-reduced-motion: reduce) {
+        .scroll-animate,
+        #destinations .section-header,
+        #about .section-header,
+        #testimonials .section-header,
+        #contact .section-header,
+        #myRatings .section-header,
+        #destinations .row > *,
+        #about .row > *,
+        #testimonials .row > *,
+        #contact .row > * {
+          transition: none;
+          animation: none;
+        }
       }
     </style>
   </head>
@@ -3003,43 +3306,28 @@
       </section>
 
       <!-- Modern Popular Tours Section -->
-      <section class="py-large bg-light" id="tours">
+      <section class="tour-section-fullwidth" id="tours">
+        <div class="section-header-tour">
         <div class="container">
-          <div class="section-header">
             <h2>Tour Du Lịch Nổi Bật</h2>
             <p>Khám phá những tour du lịch được yêu thích nhất của chúng tôi với giá cả hấp dẫn</p>
           </div>
+          </div>
           
-          <!-- Tour Slider -->
+        <!-- Tour Slider - Full Width -->
           <div class="tour-slider-container">
-            <!-- Tour Detail Panel (bên trái) -->
-            <div id="tourDetailPanel" class="tour-detail-panel">
-              <div class="tour-detail-content">
-                <h3 id="detailTourTitle" class="detail-title">Chọn tour để xem chi tiết</h3>
-                <p id="detailTourDescription" class="detail-description">Click vào hình ảnh tour để xem thông tin chi tiết</p>
-                <div id="detailTourRating" class="detail-rating">
-                  <!-- Rating sẽ được load từ API -->
+          <div class="slider" id="tourSlider">
+            <div class="list" id="tourSliderList">
+              <!-- Tour items sẽ được load từ API -->
                 </div>
-                <div id="detailTourPrice" class="detail-price">
-                  <!-- Giá sẽ được load từ API -->
-                </div>
-                <a id="detailTourBtn" href="#" class="btn btn-primary detail-btn">
-                  <i class="fas fa-eye me-2"></i>Xem chi tiết tour
-                </a>
-              </div>
+            
+            <div class="thumbnail" id="tourThumbnail">
+              <!-- Thumbnail items sẽ được load từ API -->
             </div>
             
-            <!-- Tour Slider (bên phải) -->
-            <div class="tour-slider-wrapper">
-              <div id="tourSlider" class="tour-slider">
-                <!-- Tour items sẽ được load từ API -->
-              </div>
-              <div class="slider-controls">
-                <button id="prevTour" class="slider-btn">&lt;</button>
-                <button id="nextTour" class="slider-btn">&gt;</button>
-              </div>
-              <div class="slider-progress">
-                <div class="slider-progress-bar"></div>
+            <div class="nextPrevArrows">
+              <button class="prev" id="prevTour"> &lt; </button>
+              <button class="next" id="nextTour"> &gt; </button>
               </div>
             </div>
           </div>
@@ -3382,101 +3670,8 @@
         }
       }
       
-      // Render tour slider với hiệu ứng 3D (giữ nguyên)
-      function renderTourSlider() {
-        const slider = document.getElementById('tourSlider');
-        if (!slider) return;
-        
-        slider.innerHTML = '';
-        
-        tours.forEach((tour, index) => {
-          const tourItem = document.createElement('div');
-          tourItem.className = 'tour-slider-item';
-          tourItem.setAttribute('data-tour-index', index);
-          tourItem.setAttribute('data-tour-data', JSON.stringify(tour));
-          
-          // Xử lý URL hình ảnh
-          let imageUrl = tour.Hinh_anh;
-          if (!imageUrl || imageUrl.includes('null')) {
-            imageUrl = 'images/tour-placeholder.jpg';
-          } else if (imageUrl.startsWith('/uploads/')) {
-            // /uploads/tours/abc.jpg -> images/uploads/tours/abc.jpg
-            imageUrl = 'images' + imageUrl;
-          } else if (imageUrl.startsWith('uploads/')) {
-            // uploads/tours/abc.jpg -> images/uploads/tours/abc.jpg
-            imageUrl = 'images/' + imageUrl;
-          } else if (imageUrl.startsWith('/images/')) {
-            // /images/... -> images/...
-            imageUrl = imageUrl.substring(1);
-          } else if (!imageUrl.startsWith('http') && !imageUrl.startsWith('images/')) {
-            imageUrl = 'images/uploads/tours/' + imageUrl;
-          }
-          tourItem.style.backgroundImage = `url('${imageUrl}')`;
-          
-          // Thêm sự kiện click
-          tourItem.addEventListener('click', () => {
-            console.log('Tour clicked:', tour);
-            console.log('Tour ID:', tour.Ma_tour || tour.id);
-            moveToSlide(index);
-            updateTourDetail(tour);
-          });
-          
-          // Thêm sự kiện hover để chuyển ảnh về chính giữa khi hover vào ảnh trung tâm
-          tourItem.addEventListener('mouseenter', () => {
-            if (tourItem.classList.contains('active')) {
-              const currentIndex = parseInt(tourItem.getAttribute('data-tour-index'));
-              moveToSlideCenter(currentIndex);
-            }
-          });
-          
-          // Tạo content overlay
-          const content = document.createElement('div');
-          content.className = 'tour-slider-content';
-          const tourId = tour.Ma_tour || tour.id || 'unknown';
-          content.innerHTML = `
-            <div class="tour-slider-title">${tour.Ten_tour || 'Tour không có tên'}</div>
-            <div class="tour-slider-description">${tour.Mo_ta || 'Khám phá điểm đến tuyệt vời'}</div>
-            <div class="tour-slider-price">${formatCurrency(tour.Gia_nguoi_lon || tour.price || 0)}</div>
-            <a href="/detailtour.html?id=${tourId}" class="tour-slider-btn">
-              <i class="fas fa-eye me-2"></i>Xem chi tiết
-            </a>
-          `;
-          
-          tourItem.appendChild(content);
-          slider.appendChild(tourItem);
-        });
-        
-        // Khởi tạo slider
-        initializeSlider();
-        
-        // Khởi tạo WebGL overlay cho transition effect
-        initializeWebGLOverlay();
-      }
-      
-      // Khởi tạo WebGL background cho transition effect
-      function initializeWebGLOverlay() {
-        const sliderWrapper = document.querySelector('.tour-slider-wrapper');
-        if (!sliderWrapper) return;
-        
-        // Tạo canvas background cho WebGL transition (nằm DƯỚI 3D cards)
-        const canvasBackground = document.createElement('div');
-        canvasBackground.id = 'webglTransitionOverlay';
-        canvasBackground.style.position = 'absolute';
-        canvasBackground.style.top = '0';
-        canvasBackground.style.left = '0';
-        canvasBackground.style.width = '100%';
-        canvasBackground.style.height = '100%';
-        canvasBackground.style.pointerEvents = 'none';
-        canvasBackground.style.zIndex = '0';  // Dưới cùng
-        canvasBackground.style.borderRadius = '25px';
-        canvasBackground.style.overflow = 'hidden';
-        
-        // Thêm vào đầu để nằm dưới các elements khác
-        sliderWrapper.insertBefore(canvasBackground, sliderWrapper.firstChild);
-        
-        // Lấy danh sách URL ảnh
-        const imageUrls = tours.map(tour => {
-          let imageUrl = tour.Hinh_anh;
+      // Helper function để xử lý URL hình ảnh
+      function processImageUrl(imageUrl) {
           if (!imageUrl || imageUrl.includes('null')) {
             return 'images/tour-placeholder.jpg';
           } else if (imageUrl.startsWith('/uploads/')) {
@@ -3489,165 +3684,238 @@
             return 'images/uploads/tours/' + imageUrl;
           }
           return imageUrl;
-        });
-        
-        // Khởi tạo WebGL slider (chỉ dùng cho transition effect)
-        webglSlider = new WebGLDistortionSlider({
-          container: canvasBackground,
-          images: imageUrls,
-          autoPlayDuration: 6000, // Đồng bộ với CSS auto-play (6s)
-          transitionDuration: 800  // Đồng bộ với CSS transition (0.8s)
-        });
       }
-      
-      // Khởi tạo slider
-      function initializeSlider() {
-        const items = document.querySelectorAll('.tour-slider-item');
-        if (items.length === 0) return;
+
+      // Global variables for slider
+      let currentSlideIndex = 0;
+      let autoPlayInterval = null;
+      let sliderItems = [];
+      let thumbnailItems = [];
+
+      // Render tour slider với cấu trúc mới
+      function renderTourSlider() {
+        const slider = document.querySelector('.tour-slider-container .slider');
+        const sliderList = document.getElementById('tourSliderList');
+        const thumbnail = document.getElementById('tourThumbnail');
         
-        // Đặt class cho các items
-        items.forEach((item, index) => {
-          item.classList.remove('active', 'left', 'right', 'hidden');
-          
-          if (index === 0) {
-            item.classList.add('active');
-          } else if (index === 1) {
-            item.classList.add('right');
-          } else if (index === items.length - 1 && items.length > 2) {
-            item.classList.add('left');
-          } else {
-            item.classList.add('hidden');
-          }
-        });
-        
-        // Cập nhật detail panel với tour đầu tiên
-        if (items.length > 0) {
-          const firstTourData = items[0].getAttribute('data-tour-data');
-          if (firstTourData) {
-            try {
-              const tour = JSON.parse(firstTourData);
-              updateTourDetail(tour);
-            } catch (error) {
-              console.error('Lỗi khi parse tour data:', error);
-            }
-          }
-        }
-        
-        // Bắt đầu auto-play
-        startAutoPlay();
-      }
-      
-      // Di chuyển đến slide cụ thể với WebGL distortion transition
-      function moveToSlide(targetIndex) {
-        const items = document.querySelectorAll('.tour-slider-item');
-        if (items.length === 0) return;
-        
-        const currentActiveIndex = Array.from(items).findIndex(item => 
-          item.classList.contains('active')
-        );
-        
-        if (currentActiveIndex === targetIndex) return;
-        
-        // Sử dụng requestAnimationFrame để đảm bảo tất cả transition bắt đầu cùng lúc
-        requestAnimationFrame(() => {
-          // Cập nhật class cho slider items để transition đồng bộ
-          items.forEach((item, index) => {
-            item.classList.remove('active', 'active-center', 'left', 'right', 'hidden');
-            
-            if (index === targetIndex) {
-              item.classList.add('active');
-            } else if (index === (targetIndex + 1) % items.length) {
-              item.classList.add('right');
-            } else if (index === (targetIndex - 1 + items.length) % items.length) {
-              item.classList.add('left');
-            } else {
-              item.classList.add('hidden');
-            }
-          });
-          
-          // Sau đó kích hoạt WebGL background transition
-          if (webglSlider) {
-            webglSlider.transitionTo(targetIndex);
-          }
-          
-          // Cập nhật detail panel ngay lập tức
-          const activeItem = items[targetIndex];
-          const tourData = activeItem.getAttribute('data-tour-data');
-          if (tourData) {
-            try {
-              const tour = JSON.parse(tourData);
-              updateTourDetail(tour);
-            } catch (error) {
-              console.error('Lỗi khi parse tour data:', error);
-            }
-          }
-        });
-      }
-      
-      // Di chuyển ảnh về chính giữa slider khi hover
-      function moveToSlideCenter(targetIndex) {
-        const items = document.querySelectorAll('.tour-slider-item');
-        if (items.length === 0) return;
-        
-        // Sử dụng requestAnimationFrame để đảm bảo transition đồng bộ
-        requestAnimationFrame(() => {
-          // Cập nhật class cho tất cả items - ảnh active sẽ ở giữa
-          items.forEach((item, index) => {
-            item.classList.remove('active', 'active-center', 'left', 'right', 'hidden');
-            
-            if (index === targetIndex) {
-              item.classList.add('active-center');
-            } else if (index === (targetIndex + 1) % items.length) {
-              item.classList.add('right');
-            } else if (index === (targetIndex - 1 + items.length) % items.length) {
-              item.classList.add('left');
-            } else {
-              item.classList.add('hidden');
-            }
-          });
-          
-          // Cập nhật detail panel
-          const activeItem = items[targetIndex];
-          const tourData = activeItem.getAttribute('data-tour-data');
-          if (tourData) {
-            try {
-              const tour = JSON.parse(tourData);
-              updateTourDetail(tour);
-            } catch (error) {
-              console.error('Lỗi khi parse tour data:', error);
-            }
-          }
-        });
-      }
-      
-      // Auto-play functionality
-      let autoPlayInterval;
-      let progressInterval;
-      
-      function startAutoPlay() {
-        // Kiểm tra nếu auto-play đã được start rồi thì không start lại
-        if (autoPlayInterval) {
+        if (!slider || !sliderList || !thumbnail) {
+          console.error('Slider elements not found');
           return;
         }
         
-        const TRANSITION_DURATION = 800; // 0.8s in milliseconds
-        const DISPLAY_DURATION = 5200; // 5.2s để người dùng có thời gian xem đủ lâu
-        const TOTAL_DURATION = TRANSITION_DURATION + DISPLAY_DURATION; // 6s tổng
+        // Clear existing content
+        sliderList.innerHTML = '';
+        thumbnail.innerHTML = '';
+        sliderItems = [];
+        thumbnailItems = [];
         
+        // Render tour items
+        tours.forEach((tour, index) => {
+          const imageUrl = processImageUrl(tour.Hinh_anh);
+          const tourId = tour.Ma_tour || tour.id || 'unknown';
+          
+          // Create main slider item
+          const item = document.createElement('div');
+          item.className = 'item';
+          if (index === 0) {
+              item.classList.add('active');
+          }
+          item.setAttribute('data-index', index);
+          item.innerHTML = `
+            <img src="${imageUrl}" alt="${tour.Ten_tour || 'Tour'}">
+            <div class="content">
+              <div class="title">${(tour.Ten_tour || 'Tour Du Lịch').toUpperCase()}</div>
+              <div class="type">${tour.Ma_tour || 'TOUR'}</div>
+              <div class="description">
+                ${tour.Mo_ta || 'Khám phá điểm đến tuyệt vời với dịch vụ chất lượng cao'}
+              </div>
+              <div class="button">
+                <button onclick="window.location.href='/detailtour.html?id=${tourId}'">XEM CHI TIẾT</button>
+              </div>
+            </div>
+          `;
+          sliderList.appendChild(item);
+          sliderItems.push(item);
+          
+          // Create thumbnail item
+          const thumbItem = document.createElement('div');
+          thumbItem.className = 'item';
+          if (index === 0) {
+            thumbItem.classList.add('active');
+          }
+          thumbItem.setAttribute('data-index', index);
+          thumbItem.innerHTML = `<img src="${imageUrl}" alt="${tour.Ten_tour || 'Tour'}">`;
+          thumbnail.appendChild(thumbItem);
+          thumbnailItems.push(thumbItem);
+          
+          // Add click event to thumbnail
+          thumbItem.addEventListener('click', () => {
+            const targetIndex = parseInt(thumbItem.getAttribute('data-index'));
+            goToSlide(targetIndex);
+          });
+        });
+        
+        currentSlideIndex = 0;
+        
+        // Update global arrays
+        sliderItems = Array.from(sliderList.querySelectorAll('.item'));
+        thumbnailItems = Array.from(thumbnail.querySelectorAll('.item'));
+        
+        // Setup slider controls
+        setupSliderControls();
+        
+        // Start auto-play
+        startAutoPlay();
+      }
+      
+      // Setup slider controls
+      function setupSliderControls() {
+        const nextBtn = document.querySelector('.tour-slider-container .next');
+        const prevBtn = document.querySelector('.tour-slider-container .prev');
+        
+        if (!nextBtn || !prevBtn) {
+          console.error('Slider control buttons not found');
+          return;
+        }
+        
+        // Function for next button
+        nextBtn.onclick = function() {
+          stopAutoPlay();
+          nextSlide();
+          startAutoPlay();
+        };
+        
+        // Function for prev button
+        prevBtn.onclick = function() {
+          stopAutoPlay();
+          prevSlide();
+          startAutoPlay();
+        };
+      }
+      
+      // Go to specific slide with animation (for thumbnail click)
+      function goToSlide(targetIndex) {
+        const sliderList = document.querySelector('.tour-slider-container .slider .list');
+        const thumbnail = document.querySelector('.tour-slider-container .thumbnail');
+        
+        if (!sliderList || !thumbnail) return;
+        
+        // Find current active item's data-index
+        const currentActiveItem = sliderList.querySelector('.item.active');
+        if (!currentActiveItem) return;
+        
+        const currentIndex = parseInt(currentActiveItem.getAttribute('data-index'));
+        
+        if (targetIndex === currentIndex || targetIndex < 0 || targetIndex >= tours.length) return;
+        
+        // Find target item in DOM
+        const targetItem = sliderList.querySelector(`.item[data-index="${targetIndex}"]`);
+        const targetThumb = thumbnail.querySelector(`.item[data-index="${targetIndex}"]`);
+        
+        if (!targetItem || !targetThumb) return;
+        
+        // Calculate steps needed
+        const steps = Math.abs(targetIndex - currentIndex);
+        const direction = targetIndex > currentIndex ? 'next' : 'prev';
+        
+        // Move step by step to target
+        let stepCount = 0;
+        const moveStep = () => {
+          if (stepCount < steps) {
+            moveSlider(direction);
+            stepCount++;
+            // Wait for animation to complete before next step
+            setTimeout(moveStep, 600);
+          } else {
+            // Update currentSlideIndex
+            currentSlideIndex = targetIndex;
+            // Restart auto-play
+            stopAutoPlay();
+            startAutoPlay();
+          }
+        };
+        
+        moveStep();
+      }
+      
+      // Move slider function (with animation classes)
+      function moveSlider(direction) {
+        const slider = document.querySelector('.tour-slider-container .slider');
+        const sliderList = document.querySelector('.tour-slider-container .slider .list');
+        const thumbnail = document.querySelector('.tour-slider-container .thumbnail');
+        
+        if (!slider || !sliderList || !thumbnail) return;
+        
+        let sliderItems = sliderList.querySelectorAll('.item');
+        let thumbnailItems = thumbnail.querySelectorAll('.item');
+        
+        if (sliderItems.length === 0 || thumbnailItems.length === 0) return;
+        
+        // Get current active item's index
+        const currentActiveItem = sliderList.querySelector('.item.active');
+        if (!currentActiveItem) return;
+        
+        const currentIndex = parseInt(currentActiveItem.getAttribute('data-index'));
+        if (isNaN(currentIndex)) return;
+        
+        // Calculate target index
+        let targetIndex;
+        if (direction === 'next') {
+          targetIndex = (currentIndex + 1) % tours.length;
+        } else {
+          targetIndex = (currentIndex - 1 + tours.length) % tours.length;
+        }
+        
+        // Find target items by data-index
+        const targetSliderItem = sliderList.querySelector(`.item[data-index="${targetIndex}"]`);
+        const targetThumbnailItem = thumbnail.querySelector(`.item[data-index="${targetIndex}"]`);
+        
+        if (!targetSliderItem || !targetThumbnailItem) return;
+        
+        // Remove previous animation classes
+        slider.classList.remove('next', 'prev');
+        
+        // Remove active classes
+        sliderItems.forEach(item => item.classList.remove('active'));
+        thumbnailItems.forEach(item => item.classList.remove('active'));
+        
+        // Move target items to first position
+        sliderList.insertBefore(targetSliderItem, sliderList.firstChild);
+        thumbnail.insertBefore(targetThumbnailItem, thumbnail.firstChild);
+        
+        // Add active class to first item (which is now the target)
+        targetSliderItem.classList.add('active');
+        targetThumbnailItem.classList.add('active');
+        
+        // Update currentSlideIndex
+        currentSlideIndex = targetIndex;
+        
+        // Add animation class
+        slider.classList.add(direction);
+        
+        // Remove animation class after animation completes
+        slider.addEventListener('animationend', function cleanup() {
+          slider.classList.remove('next', 'prev');
+          slider.removeEventListener('animationend', cleanup);
+        }, { once: true });
+      }
+      
+      // Next slide - chuyển sang slide tiếp theo (từ trái sang phải)
+      function nextSlide() {
+        moveSlider('next');
+      }
+      
+      // Previous slide - chuyển về slide trước (từ phải sang trái)
+      function prevSlide() {
+        moveSlider('prev');
+      }
+      
+      // Auto-play functionality
+      function startAutoPlay() {
+        stopAutoPlay(); // Clear any existing interval
         autoPlayInterval = setInterval(() => {
-          const items = document.querySelectorAll('.tour-slider-item');
-          if (items.length === 0) return;
-          
-          const currentActiveIndex = Array.from(items).findIndex(item => 
-            item.classList.contains('active')
-          );
-          
-          const nextIndex = (currentActiveIndex + 1) % items.length;
-          moveToSlide(nextIndex);
-        }, TOTAL_DURATION);
-        
-        // Progress bar - cập nhật theo tổng thời gian thực
-        startProgressBar(TOTAL_DURATION);
+          nextSlide();
+        }, 5000); // 5 seconds
       }
       
       function stopAutoPlay() {
@@ -3655,165 +3923,6 @@
           clearInterval(autoPlayInterval);
           autoPlayInterval = null;
         }
-        if (progressInterval) {
-          clearInterval(progressInterval);
-          progressInterval = null;
-        }
-      }
-      
-      function startProgressBar(totalDuration = 5000) {
-        const progressBar = document.querySelector('.slider-progress-bar');
-        if (!progressBar) return;
-        
-        let width = 0;
-        progressBar.style.width = '0%';
-        
-        // Tính số lần update để đạt 100% trong totalDuration milliseconds
-        const updateInterval = 100; // Update mỗi 100ms
-        const stepSize = (100 / (totalDuration / updateInterval));
-        
-        progressInterval = setInterval(() => {
-          width += stepSize;
-          progressBar.style.width = width + '%';
-          
-          if (width >= 100) {
-            width = 0;
-          }
-        }, updateInterval);
-      }
-      
-      // Setup slider controls
-      function setupSliderControls() {
-        const prevBtn = document.getElementById('prevTour');
-        const nextBtn = document.getElementById('nextTour');
-        
-        if (prevBtn) {
-          prevBtn.addEventListener('click', () => {
-            const items = document.querySelectorAll('.tour-slider-item');
-            if (items.length === 0) return;
-            
-            const currentActiveIndex = Array.from(items).findIndex(item => 
-              item.classList.contains('active')
-            );
-            
-            const prevIndex = (currentActiveIndex - 1 + items.length) % items.length;
-            
-            // Stop auto-play TRƯỚC khi chuyển slide
-            stopAutoPlay();
-            moveToSlide(prevIndex);
-            
-            // Khởi động lại auto-play sau khi transition hoàn tất
-            setTimeout(startAutoPlay, 850);
-          });
-        }
-        
-        if (nextBtn) {
-          nextBtn.addEventListener('click', () => {
-            const items = document.querySelectorAll('.tour-slider-item');
-            if (items.length === 0) return;
-            
-            const currentActiveIndex = Array.from(items).findIndex(item => 
-              item.classList.contains('active')
-            );
-            
-            const nextIndex = (currentActiveIndex + 1) % items.length;
-            
-            // Stop auto-play TRƯỚC khi chuyển slide
-            stopAutoPlay();
-            moveToSlide(nextIndex);
-            
-            // Khởi động lại auto-play sau khi transition hoàn tất
-            setTimeout(startAutoPlay, 850);
-          });
-        }
-        
-        // Pause on hover
-        const sliderWrapper = document.querySelector('.tour-slider-wrapper');
-        if (sliderWrapper) {
-          sliderWrapper.addEventListener('mouseenter', stopAutoPlay);
-          sliderWrapper.addEventListener('mouseleave', startAutoPlay);
-        }
-      }
-      
-      // Function để cập nhật tour detail panel
-      function updateTourDetail(tour) {
-        const titleEl = document.getElementById('detailTourTitle');
-        const descEl = document.getElementById('detailTourDescription');
-        const ratingEl = document.getElementById('detailTourRating');
-        const priceEl = document.getElementById('detailTourPrice');
-        const btnEl = document.getElementById('detailTourBtn');
-        
-        console.log('Elements found:', {
-          titleEl: !!titleEl,
-          descEl: !!descEl,
-          ratingEl: !!ratingEl,
-          priceEl: !!priceEl,
-          btnEl: !!btnEl
-        });
-        
-        if (titleEl) titleEl.textContent = tour.Ten_tour || 'Tour không có tên';
-        if (descEl) descEl.textContent = tour.Mo_ta || 'Không có mô tả chi tiết';
-        
-        // Cập nhật href với fallback
-        if (btnEl) {
-          const tourId = tour.Ma_tour || tour.id || 'unknown';
-          if (tourId === 'unknown') {
-            btnEl.href = '/alltour.html'; // Fallback đến trang tất cả tour
-            btnEl.textContent = 'Xem tất cả tour';
-          } else {
-            btnEl.href = `/detailtour.html?id=${tourId}`;
-            btnEl.innerHTML = '<i class="fas fa-eye me-2"></i>Xem chi tiết tour';
-          }
-          console.log('Updated detail button href:', btnEl.href);
-        }
-        
-        // Cập nhật giá
-        if (priceEl) {
-          const price = tour.Gia_nguoi_lon || tour.price || 0;
-          priceEl.innerHTML = `
-            <div class="price">${formatCurrency(price)}</div>
-            <div class="price-label">/ người</div>
-          `;
-        }
-        
-        // Cập nhật background của slider wrapper
-        updateSliderBackground(tour);
-        
-        // Load rating với fallback
-        const tourId = tour.Ma_tour || tour.id || 'unknown';
-        console.log('Loading ratings for tour:', tourId, 'with element:', ratingEl);
-        if (ratingEl) {
-          loadTourRatings(tourId, ratingEl);
-        } else {
-          console.warn('Rating element not found, cannot load ratings');
-        }
-      }
-      
-      // Function để cập nhật background của slider wrapper
-      function updateSliderBackground(tour) {
-        const sliderWrapper = document.querySelector('.tour-slider-wrapper');
-        if (!sliderWrapper) return;
-        
-        // Xử lý URL hình ảnh
-        let imageUrl = tour.Hinh_anh;
-        if (!imageUrl || imageUrl.includes('null')) {
-          imageUrl = 'images/tour-placeholder.jpg';
-        } else if (imageUrl.startsWith('/uploads/')) {
-          imageUrl = 'images' + imageUrl;
-        } else if (imageUrl.startsWith('uploads/')) {
-          imageUrl = 'images/' + imageUrl;
-        } else if (imageUrl.startsWith('/images/')) {
-          imageUrl = imageUrl.substring(1);
-        } else if (!imageUrl.startsWith('http') && !imageUrl.startsWith('images/')) {
-          imageUrl = 'images/uploads/tours/' + imageUrl;
-        }
-        
-        // Cập nhật background với hiệu ứng fade
-        sliderWrapper.style.backgroundImage = `linear-gradient(rgba(102, 126, 234, 0.7), rgba(118, 75, 162, 0.7)), url('${imageUrl}')`;
-        sliderWrapper.style.backgroundSize = 'cover';
-        sliderWrapper.style.backgroundPosition = 'center center';
-        sliderWrapper.style.backgroundRepeat = 'no-repeat';
-        sliderWrapper.style.transition = 'background-image 0.5s ease-in-out';
       }
       
       // Function để load rating của tour
@@ -4123,9 +4232,402 @@
         }
       }
 
+      // ============================================
+      // SCROLL ANIMATIONS - Fade-in + Slide-up
+      // ============================================
+      
+      // Intersection Observer để trigger animations khi scroll vào viewport
+      function initScrollAnimations() {
+        // Kiểm tra xem IntersectionObserver có được hỗ trợ không
+        if (!window.IntersectionObserver) {
+          console.warn('IntersectionObserver không được hỗ trợ. Scroll animations sẽ không hoạt động.');
+          return;
+        }
+
+        // Options cho Intersection Observer - Tối ưu cho performance
+        const observerOptions = {
+          root: null, // Viewport
+          rootMargin: '0px 0px -100px 0px', // Trigger khi element cách viewport 100px từ dưới
+          threshold: [0, 0.1, 0.2] // Multiple thresholds để trigger chính xác hơn
+        };
+
+        // Callback function
+        const observerCallback = (entries, observer) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const element = entry.target;
+              
+              // Thêm class 'animated' để trigger animation
+              element.classList.add('animated');
+              
+              // Nếu là section, animate section-header và các children
+              if (element.classList.contains('py-large') || 
+                  element.id === 'destinations' || 
+                  element.id === 'about' || 
+                  element.id === 'testimonials' || 
+                  element.id === 'contact' ||
+                  element.id === 'myRatings') {
+                const header = element.querySelector('.section-header');
+                if (header && !header.classList.contains('animated')) {
+                  // Delay nhỏ để header animate trước
+                  setTimeout(() => {
+                    header.classList.add('animated');
+                  }, 100);
+                }
+              }
+              
+              // Stop observing sau khi animated (chỉ animate 1 lần để tối ưu performance)
+              observer.unobserve(element);
+            }
+          });
+        };
+
+        // Tạo Intersection Observer
+        const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe các sections - sử dụng requestIdleCallback nếu có để tối ưu
+        const observeSections = () => {
+          const sectionsToAnimate = [
+            document.getElementById('destinations'),
+            document.getElementById('about'),
+            document.getElementById('testimonials'),
+            document.getElementById('contact'),
+            document.getElementById('myRatings')
+          ];
+
+          sectionsToAnimate.forEach(section => {
+            if (section) {
+              observer.observe(section);
+            }
+          });
+
+          // Observe các elements có class scroll-animate
+          document.querySelectorAll('.scroll-animate').forEach(element => {
+            observer.observe(element);
+          });
+        };
+        
+        // Sử dụng requestIdleCallback nếu có, nếu không thì dùng setTimeout
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(observeSections, { timeout: 1000 });
+        } else {
+          setTimeout(observeSections, 300); // Giảm delay xuống 300ms để tối ưu
+        }
+      }
+
+      // Smooth scroll cho anchor links với easing cao cấp
+      function initSmoothScroll() {
+        // Custom smooth scroll function với easing
+        function smoothScrollTo(target, duration = 1000) {
+          const startPosition = window.pageYOffset;
+          const targetElement = typeof target === 'string' ? document.querySelector(target) : target;
+          
+          if (!targetElement) return;
+          
+          const navbarHeight = document.querySelector('.navbar')?.offsetHeight || 70;
+          let targetPosition = targetElement.offsetTop - navbarHeight;
+          
+          // Nếu là Tour Section, cần tính thêm overlap để Hero Section bị che hoàn toàn
+          if (targetElement.id === 'tours' || targetElement.classList.contains('tour-section-fullwidth')) {
+            const heroSection = document.querySelector('.hero-section');
+            if (heroSection) {
+              // Tour Section có margin-top: -150px để overlap với Hero
+              // và padding-top: 150px để bù lại margin
+              // Tính toán vị trí chính xác để Hero bị che hoàn toàn và Tour Section hiển thị đầy đủ
+              const heroHeight = heroSection.offsetHeight;
+              const heroTop = heroSection.offsetTop || 0;
+              
+              // Vị trí scroll = Hero top + Hero height - navbar height
+              // Điều này đảm bảo Hero bị che hoàn toàn và Tour Section hiển thị từ đầu
+              // (Tour Section bắt đầu từ heroHeight - 150px do margin-top, nhưng nội dung bắt đầu từ heroHeight do padding-top)
+              targetPosition = heroTop + heroHeight - navbarHeight;
+              
+              // Đảm bảo không scroll âm
+              if (targetPosition < 0) {
+                targetPosition = 0;
+              }
+            }
+          }
+          
+          const distance = targetPosition - startPosition;
+          let startTime = null;
+          
+          // Easing function - easeInOutCubic với cải tiến cho mượt mà hơn
+          function easeInOutCubic(t) {
+            // Tối ưu hóa tính toán để mượt hơn
+            if (t < 0.5) {
+              return 4 * t * t * t;
+            } else {
+              const f = 2 * t - 2;
+              return 1 + f * f * f / 2;
+            }
+          }
+          
+          // Alternative: easeOutCubic cho mượt hơn (nếu cần)
+          function easeOutCubic(t) {
+            const f = t - 1;
+            return f * f * f + 1;
+          }
+          
+          // Sử dụng requestAnimationFrame với tối ưu
+          let rafId = null;
+          
+          function animation(currentTime) {
+            if (startTime === null) startTime = currentTime;
+            const timeElapsed = currentTime - startTime;
+            const progress = Math.min(timeElapsed / duration, 1);
+            
+            // Áp dụng easing
+            const ease = easeInOutCubic(progress);
+            const currentPosition = startPosition + distance * ease;
+            
+            // Sử dụng scrollTo với behavior smooth nếu có thể
+            if (window.scrollTo) {
+              window.scrollTo({
+                top: currentPosition,
+                left: 0,
+                behavior: 'auto' // Dùng auto để kiểm soát bằng JS
+              });
+            } else {
+              window.scrollTo(0, currentPosition);
+            }
+            
+            if (timeElapsed < duration) {
+              rafId = requestAnimationFrame(animation);
+            } else {
+              // Cleanup sau khi hoàn thành
+              rafId = null;
+            }
+          }
+          
+          rafId = requestAnimationFrame(animation);
+          
+          // Cleanup nếu component unmount (optional)
+          return () => {
+            if (rafId !== null) {
+              cancelAnimationFrame(rafId);
+            }
+          };
+        }
+        
+        // Xử lý tất cả anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+          anchor.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            
+            // Bỏ qua nếu là # hoặc empty
+            if (href === '#' || href === '') return;
+            
+            // Bỏ qua nếu là #myRatings (được xử lý riêng ở dưới)
+            if (href === '#myRatings') return;
+            
+            const target = document.querySelector(href);
+            if (target) {
+              e.preventDefault();
+              
+              // Reset flag để có thể scroll lại
+              if (typeof hasScrolledPastHero !== 'undefined') {
+                hasScrolledPastHero = false;
+              }
+              
+              // Sử dụng custom smooth scroll với duration 1000ms (1 giây)
+              smoothScrollTo(target, 1000);
+            }
+          });
+        });
+        
+        // ============================================
+        // OVERLAP SMOOTH SCROLL - Hero → Tour Section
+        // ============================================
+        
+        // Helper function để scroll đến vị trí cụ thể với snap effect mượt mà
+        function smoothScrollToPosition(targetPosition, duration = 800) {
+          const startPosition = window.pageYOffset || document.documentElement.scrollTop;
+          const distance = targetPosition - startPosition;
+          
+          // Nếu khoảng cách quá nhỏ, không cần scroll
+          if (Math.abs(distance) < 10) {
+            isScrolling = false;
+            return;
+          }
+          
+          let startTime = null;
+          let rafId = null;
+          
+          // Easing function - easeInOutCubic cho chuyển động mượt mà, premium
+          function easeInOutCubic(t) {
+            return t < 0.5 
+              ? 4 * t * t * t 
+              : 1 - Math.pow(-2 * t + 2, 3) / 2;
+          }
+          
+          function animation(currentTime) {
+            if (startTime === null) startTime = currentTime;
+            const timeElapsed = currentTime - startTime;
+            const progress = Math.min(timeElapsed / duration, 1);
+            
+            // Áp dụng easing
+            const ease = easeInOutCubic(progress);
+            const currentPosition = startPosition + distance * ease;
+            
+            // Scroll đến vị trí
+            window.scrollTo({
+              top: currentPosition,
+              left: 0,
+              behavior: 'auto'
+            });
+            
+            if (timeElapsed < duration) {
+              rafId = requestAnimationFrame(animation);
+            } else {
+              // Đảm bảo scroll đến đúng vị trí cuối cùng
+              window.scrollTo({
+                top: targetPosition,
+                left: 0,
+                behavior: 'auto'
+              });
+              rafId = null;
+            }
+          }
+          
+          rafId = requestAnimationFrame(animation);
+        }
+        
+        // ============================================
+        // OVERLAP SMOOTH SCROLL - Hero → Tour Section
+        // Đơn giản hóa để đảm bảo hoạt động đúng
+        // ============================================
+        
+        let isScrolling = false;
+        let wheelTimeout = null;
+        let hasScrolledPastHero = false; // Flag để đánh dấu đã scroll qua Hero
+        
+        // Xử lý scroll wheel từ Hero xuống Tour Section với snap effect
+        window.addEventListener('wheel', function(e) {
+          const heroSection = document.querySelector('.hero-section');
+          const tourSection = document.getElementById('tours');
+          
+          if (!heroSection || !tourSection) {
+            // Nếu không có Hero hoặc Tour Section, cho phép scroll tự nhiên
+            return;
+          }
+          
+          const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+          const heroBottom = heroSection.offsetTop + heroSection.offsetHeight;
+          const heroTop = heroSection.offsetTop;
+          const navbarHeight = document.querySelector('.navbar')?.offsetHeight || 70;
+          const heroHeight = heroSection.offsetHeight;
+          const tourSnapPosition = heroHeight - navbarHeight;
+          
+          // Kiểm tra xem đã scroll qua Hero Section chưa
+          const isPastHero = currentScrollTop >= heroBottom - 50; // Cho phép scroll tự nhiên khi đã qua Hero 50px
+          
+          // Nếu đã scroll qua Hero, cho phép scroll tự nhiên
+          if (isPastHero) {
+            hasScrolledPastHero = true;
+            return; // Không preventDefault, cho phép scroll tự nhiên
+          }
+          
+          // Nếu đang scroll (đang trong animation), chỉ preventDefault khi đang ở Hero
+          if (isScrolling) {
+            const isInHero = currentScrollTop >= heroTop && currentScrollTop < heroBottom;
+            if (isInHero) {
+              e.preventDefault();
+            }
+            return;
+          }
+          
+          // Kiểm tra xem có đang ở trong Hero Section không
+          // Chỉ áp dụng snap scroll khi ở đầu Hero (top 80% của Hero)
+          const isInHeroTop = currentScrollTop >= heroTop && currentScrollTop < heroTop + (heroHeight * 0.8);
+          
+          // Nếu đang ở đầu Hero và scroll xuống, mới áp dụng snap scroll
+          if (e.deltaY > 0 && isInHeroTop && !hasScrolledPastHero) {
+            e.preventDefault(); // Ngăn scroll mặc định
+            
+            // Clear timeout trước đó
+            if (wheelTimeout) {
+              clearTimeout(wheelTimeout);
+            }
+            
+            // Delay nhỏ để tránh trigger quá nhiều lần khi scroll nhanh
+            wheelTimeout = setTimeout(() => {
+              if (!isScrolling) {
+                isScrolling = true;
+                
+                // Snap scroll trực tiếp đến Tour Section
+                smoothScrollToPosition(tourSnapPosition, 800);
+                
+                // Reset flag sau khi scroll xong
+                setTimeout(() => {
+                  isScrolling = false;
+                  hasScrolledPastHero = true; // Đánh dấu đã scroll qua Hero
+                }, 900);
+              }
+            }, 100);
+          } else if (e.deltaY < 0 && currentScrollTop > heroTop) {
+            // Nếu scroll lên và đã qua Hero, cho phép scroll tự nhiên
+            hasScrolledPastHero = false; // Reset flag khi scroll lên
+          }
+        }, { passive: false }); // passive: false để có thể preventDefault
+        
+        // Xử lý keyboard navigation (Arrow Down, Page Down, Space) với snap scroll
+        document.addEventListener('keydown', function(e) {
+          const heroSection = document.querySelector('.hero-section');
+          const tourSection = document.getElementById('tours');
+          
+          if (!heroSection || !tourSection || isScrolling) return;
+          
+          const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+          const heroBottom = heroSection.offsetTop + heroSection.offsetHeight;
+          const heroTop = heroSection.offsetTop;
+          const navbarHeight = document.querySelector('.navbar')?.offsetHeight || 70;
+          const heroHeight = heroSection.offsetHeight;
+          const tourSnapPosition = heroHeight - navbarHeight;
+          
+          // Kiểm tra xem có đang ở trong Hero Section không (chỉ đầu Hero)
+          const isInHeroTop = currentScrollTop >= heroTop && currentScrollTop < heroTop + (heroHeight * 0.8);
+          
+          // Nếu đang ở đầu Hero và nhấn Arrow Down hoặc Page Down
+          if ((e.key === 'ArrowDown' || e.key === 'PageDown' || (e.key === ' ' && !e.target.matches('input, textarea'))) &&
+              isInHeroTop && !hasScrolledPastHero) {
+            e.preventDefault();
+            isScrolling = true;
+            smoothScrollToPosition(tourSnapPosition, 600);
+            
+            // Reset flag sau khi scroll xong
+            setTimeout(() => {
+              isScrolling = false;
+              hasScrolledPastHero = true;
+            }, 700);
+          }
+        });
+        
+        // Reset flag khi scroll lên lại Hero Section
+        window.addEventListener('scroll', function() {
+          const heroSection = document.querySelector('.hero-section');
+          if (!heroSection) return;
+          
+          const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+          const heroTop = heroSection.offsetTop;
+          
+          // Nếu scroll lên lại đầu Hero, reset flag để có thể snap scroll lại
+          if (currentScrollTop < heroTop + 100) {
+            hasScrolledPastHero = false;
+          }
+        });
+      }
+
       document.addEventListener('DOMContentLoaded', function() {
         // Load tours
         loadTours();
+        
+        // Khởi tạo scroll animations
+        initScrollAnimations();
+        
+        // Khởi tạo smooth scroll cho anchor links
+        initSmoothScroll();
+        
         // Sử dụng try-catch để xử lý môi trường sandbox
         try {
           // Nếu có token, xác thực nó
@@ -4175,6 +4677,8 @@
         });
         
         // Hiệu ứng mượt khi click vào anchor links (chỉ links bắt đầu bằng #)
+        // Lưu ý: Logic này được xử lý bởi initSmoothScroll() ở trên
+        // Code này chỉ để xử lý các trường hợp đặc biệt như myRatings
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
           anchor.addEventListener('click', function (e) {
             const targetId = this.getAttribute('href');
@@ -4184,14 +4688,13 @@
               return; // Không preventDefault, để link hoạt động bình thường
             }
             
-            e.preventDefault();
-            
-            // Thử tìm element với ID
-            try {
-              const targetElement = document.querySelector(targetId);
-              if (targetElement) {
-                // Nếu là link myRatings, hiển thị section TRƯỚC khi scroll
-                if (targetId === '#myRatings') {
+            // Nếu là link myRatings, xử lý đặc biệt
+            if (targetId === '#myRatings') {
+              e.preventDefault();
+              
+              try {
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
                   // Hiển thị section ngay lập tức
                   targetElement.style.display = 'block';
                   
@@ -4212,18 +4715,13 @@
                       loadUserRatings();
                     }
                   }, 100);
-                } else {
-                  // Các link khác: scroll bình thường
-                  targetElement.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                  });
                 }
+              } catch (error) {
+                console.warn('Invalid selector:', targetId);
               }
-            } catch (error) {
-              // Bỏ qua lỗi selector không hợp lệ
-              console.warn('Invalid selector:', targetId);
             }
+            // Các link khác (#tours, #destinations, etc.) được xử lý bởi initSmoothScroll()
+            // Không cần preventDefault ở đây vì đã được xử lý trong initSmoothScroll()
           });
         });
         
@@ -5123,4 +5621,5 @@
 </script>
 
   </body>
+  </html>  
   </html>  
