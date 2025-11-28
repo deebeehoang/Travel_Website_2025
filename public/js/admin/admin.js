@@ -74,7 +74,8 @@ function setupUI() {
 function setupTabNavigation() {
     // Xử lý các liên kết trong sidebar
     const navItems = {
-        'navDashboard': { section: 'dashboardSection', title: 'Tổng quan hệ thống', loader: null },
+        'navDashboard': { section: 'dashboardSection', title: 'Tổng quan', loader: null },
+        'navStatistics': { section: 'dashboardSection', title: 'Thống kê - Báo cáo', loader: null },
         'navTours': { section: 'toursSection', title: 'Quản lý Tour', loader: loadToursTab },
         'navDestinations': { section: 'destinationsSection', title: 'Quản lý Điểm đến', loader: loadDestinationsTab },
         'navServices': { section: 'servicesSection', title: 'Quản lý Dịch vụ', loader: loadServices },
@@ -89,7 +90,8 @@ function setupTabNavigation() {
         },
         'navRatings': { section: 'ratingsSection', title: 'Quản lý đánh giá', loader: loadRatings },
         'navPromotions': { section: 'promotionsSection', title: 'Quản lý khuyến mãi', loader: () => { if (window.promotionManager) window.promotionManager.loadPromotions(); } },
-        'navSettings': { section: 'settingsSection', title: 'Cài đặt hệ thống', loader: null }
+        'navSettings': { section: 'settingsSection', title: 'Cài đặt hệ thống', loader: null },
+        'navMessages': { section: 'messagesSection', title: 'Tin nhắn', loader: null, isChat: true }
     };
 
     for (const [navId, navInfo] of Object.entries(navItems)) {
@@ -97,7 +99,92 @@ function setupTabNavigation() {
         if (navElement) {
             navElement.addEventListener('click', function(e) {
                 e.preventDefault();
-                showSection(navInfo.section);
+                
+                // Remove active class from all nav items
+                document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                // Add active class to clicked item
+                this.classList.add('active');
+                
+                // Hide chat container and messages section if not messages
+                const chatContainer = document.getElementById('chatContainer');
+                const messagesSection = document.getElementById('messagesSection');
+                
+                // Hide all sections first
+                document.querySelectorAll('.content-section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                
+                // Hide admin header by default, will show for non-messages sections
+                const adminHeader = document.getElementById('adminHeader');
+                
+                if (navInfo.isChat) {
+                    // Hide admin header for messages
+                    if (adminHeader) {
+                        adminHeader.style.display = 'none';
+                    }
+                    
+                    // QUAN TRỌNG: Add class 'messages-active' vào body để trigger CSS rules
+                    document.body.classList.add('messages-active');
+                    
+                    // Force remove padding/margin với inline styles để chắc chắn
+                    const mainContent = document.querySelector('.main-content');
+                    const colElement = document.querySelector('.col.p-0');
+                    const rowElement = document.querySelector('.row.g-0');
+                    const containerFluid = document.querySelector('.container-fluid.px-0');
+                    
+                    if (mainContent) {
+                        mainContent.style.setProperty('padding', '0', 'important');
+                        mainContent.style.setProperty('margin-left', '280px', 'important');
+                        mainContent.style.setProperty('width', 'calc(100% - 280px)', 'important');
+                    }
+                    
+                    if (colElement) {
+                        colElement.style.setProperty('padding', '0', 'important');
+                    }
+                    
+                    if (rowElement) {
+                        rowElement.style.setProperty('margin-left', '0', 'important');
+                        rowElement.style.setProperty('margin-right', '0', 'important');
+                    }
+                    
+                    if (containerFluid) {
+                        containerFluid.style.setProperty('padding-left', '0', 'important');
+                        containerFluid.style.setProperty('padding-right', '0', 'important');
+                    }
+                    
+                    // Show chat container for messages
+                    if (chatContainer) {
+                        chatContainer.style.display = 'flex';
+                    }
+                    if (messagesSection) {
+                        messagesSection.classList.add('active');
+                    }
+                } else {
+                    // Show admin header for other sections
+                    if (adminHeader) {
+                        adminHeader.style.display = 'block';
+                    }
+                    
+                    // QUAN TRỌNG: Remove class 'messages-active' khỏi body
+                    document.body.classList.remove('messages-active');
+                    
+                    // Restore normal padding/margin cho các section khác
+                    const mainContent = document.querySelector('.main-content');
+                    if (mainContent) {
+                        mainContent.style.removeProperty('padding');
+                        mainContent.style.removeProperty('margin-left');
+                        mainContent.style.removeProperty('width');
+                    }
+                    
+                    // Hide chat container and messages section for other sections
+                    if (chatContainer) {
+                        chatContainer.style.display = 'none';
+                    }
+                    if (messagesSection) {
+                        messagesSection.classList.remove('active');
+                    }
+                    showSection(navInfo.section);
+                }
                 
                 const sectionTitleElement = document.getElementById('sectionTitle');
                 if (sectionTitleElement) {
@@ -3151,49 +3238,70 @@ async function renderSchedules(schedules) {
         const isPastSchedule = s.tourStatus === 'Đã diễn ra' || 
                                (dateTo && new Date(dateTo) < new Date());
         
-        // Load available guides for this schedule's date range (only if not past)
-        let guideDropdown = '';
-        if (isPastSchedule) {
-            // Disable dropdown for past schedules
-            guideDropdown = '<select class="form-select form-select-sm" disabled title="Không thể thay đổi HDV cho lịch đã diễn ra">';
-            guideDropdown += '<option value="">-- Lịch đã diễn ra --</option>';
-            guideDropdown += '</select>';
-        } else {
-            // Tạo dropdown với style để đảm bảo có thể click được
-            guideDropdown = '<select class="form-select form-select-sm" id="guideSelect_' + s.Ma_lich + '" style="min-width: 180px; z-index: 1000; position: relative; pointer-events: auto;" onchange="assignGuideToSchedule(\'' + s.Ma_lich + '\', this.value, \'' + dateFrom + '\', \'' + dateTo + '\')">';
-            // Luôn hiển thị option "Gỡ HDV" với style nổi bật, selected nếu chưa có HDV
-            const noGuideSelected = !s.Ma_huong_dan_vien || s.Ma_huong_dan_vien === '';
-            guideDropdown += `<option value="" ${noGuideSelected ? 'selected' : ''} style="color: #dc3545; font-weight: bold;">❌ Gỡ HDV</option>`;
-            
-            try {
-                // Thêm ma_tour vào query để kiểm tra trùng tour
-                let availableGuidesUrl = `http://localhost:5000/api/admin/guides/available?date_from=${dateFrom}&date_to=${dateTo}&exclude_schedule=${s.Ma_lich}`;
-                if (s.Ma_tour) {
-                    availableGuidesUrl += `&ma_tour=${encodeURIComponent(s.Ma_tour)}`;
-                }
-                
-                const availableGuidesRes = await fetch(availableGuidesUrl, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (availableGuidesRes.ok) {
-                    const guidesData = await availableGuidesRes.json();
-                    if (guidesData.status === 'success' && guidesData.data.guides) {
-                        guidesData.data.guides.forEach(guide => {
-                            const selected = s.Ma_huong_dan_vien === guide.Ma_huong_dan_vien ? 'selected' : '';
-                            guideDropdown += `<option value="${guide.Ma_huong_dan_vien}" ${selected}>👤 ${guide.Ten_huong_dan_vien} (${guide.So_dien_thoai})</option>`;
-                        });
-                    }
-                }
-            } catch (err) {
-                console.error('Error loading available guides:', err);
-            }
-            
-            guideDropdown += '</select>';
-        }
-        
         const currentGuideName = s.Ten_huong_dan_vien || 'Chưa phân công';
         const tourName = s.Ten_tour || s.Ma_tour;
         const hasGuide = s.Ma_huong_dan_vien && s.Ma_huong_dan_vien !== '';
+        
+        // Cải thiện UI cột HDV: chỉ hiện dropdown khi nhấn "Phân công"
+        let guideColumnHTML = '';
+        if (isPastSchedule) {
+            // Lịch đã diễn ra: chỉ hiển thị tên HDV (nếu có)
+            guideColumnHTML = `<span class="badge ${hasGuide ? 'bg-info' : 'bg-secondary'}">${currentGuideName}</span>`;
+        } else {
+            // Lịch chưa diễn ra: hiển thị theo trạng thái phân công
+            if (hasGuide) {
+                // Đã phân công: hiển thị tên HDV + icon thùng rác nhỏ để gỡ
+                guideColumnHTML = `
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-info">${currentGuideName}</span>
+                        <button class="btn btn-sm btn-link text-danger p-0" 
+                                onclick="removeGuideFromSchedule('${s.Ma_lich}', '${dateFrom}', '${dateTo}')" 
+                                title="Gỡ HDV"
+                                style="line-height: 1; font-size: 0.875rem;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                `;
+            } else {
+                // Chưa phân công: hiển thị nút "Chọn HDV" để mở dropdown
+                guideColumnHTML = `
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-secondary">Chưa phân công</span>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="showGuideDropdown('${s.Ma_lich}', '${dateFrom}', '${dateTo}', '${s.Ma_tour || ''}')" 
+                                    title="Phân công HDV">
+                                <i class="fas fa-user-plus"></i> Chọn HDV
+                            </button>
+                        </div>
+                        <div id="guideDropdown_${s.Ma_lich}" style="display: none; margin-top: 0.5rem;"></div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Cải thiện cột thao tác: Ẩn Sửa/Xóa cho lịch đã diễn ra
+        let actionButtonsHTML = '';
+        if (isPastSchedule) {
+            // Lịch đã diễn ra: chỉ cho xem chi tiết
+            actionButtonsHTML = `
+                <button class="btn btn-sm btn-info" onclick="viewSchedule('${s.Ma_lich}')" title="Xem chi tiết">
+                    <i class="fas fa-eye"></i> Xem
+                </button>
+            `;
+        } else {
+            // Lịch chưa diễn ra: cho phép Sửa và Xóa
+            actionButtonsHTML = `
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-primary" onclick="editSchedule('${s.Ma_lich}')">
+                        <i class="fas fa-edit"></i> Sửa
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteSchedule('${s.Ma_lich}')">
+                        <i class="fas fa-trash"></i> Xóa
+                    </button>
+                </div>
+            `;
+        }
         
         tr.innerHTML = `
             <td><strong>${s.Ma_lich}</strong></td>
@@ -3208,26 +3316,9 @@ async function renderSchedules(schedules) {
             <td>${s.So_cho || 0}</td>
             <td><span class="badge bg-secondary">${bookedSeats}</span></td>
             <td><span class="badge ${remainingSeats > 0 ? 'bg-success' : 'bg-danger'}">${remainingSeats}</span></td>
-            <td>
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <span class="badge ${hasGuide ? 'bg-info' : 'bg-secondary'}">${currentGuideName}</span>
-                    ${guideDropdown}
-                    ${hasGuide && !isPastSchedule ? `<button class="btn btn-sm btn-outline-danger" onclick="removeGuideFromSchedule('${s.Ma_lich}', '${dateFrom}', '${dateTo}')" title="Gỡ HDV" style="white-space: nowrap;">
-                        <i class="fas fa-times"></i> Gỡ
-                    </button>` : ''}
-                </div>
-            </td>
+            <td>${guideColumnHTML}</td>
             <td>${getScheduleStatusBadge(s.tourStatus)}</td>
-            <td>
-                <div class="btn-group">
-                    <button class="btn btn-sm btn-primary" onclick="editSchedule('${s.Ma_lich}')">
-                        <i class="fas fa-edit"></i> Sửa
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteSchedule('${s.Ma_lich}')">
-                        <i class="fas fa-trash"></i> Xóa
-                    </button>
-                </div>
-            </td>
+            <td>${actionButtonsHTML}</td>
         `;
         tbody.appendChild(tr);
     }
@@ -4725,6 +4816,178 @@ async function assignGuideToSchedule(maLich, maHuongDanVien, ngayBatDau, ngayKet
         console.error('Error assigning guide:', error);
         showAlert('danger', error.message || 'Lỗi khi phân công hướng dẫn viên');
         loadSchedules(); // Reload để reset dropdown
+    }
+}
+
+// Hàm hiển thị dropdown chọn HDV khi nhấn "Chọn HDV"
+async function showGuideDropdown(maLich, dateFrom, dateTo, maTour) {
+    const dropdownContainer = document.getElementById(`guideDropdown_${maLich}`);
+    if (!dropdownContainer) {
+        console.error('Dropdown container not found for schedule:', maLich);
+        return;
+    }
+    
+    // Nếu đã hiển thị, ẩn đi
+    if (dropdownContainer.style.display !== 'none' && dropdownContainer.style.display !== '') {
+        dropdownContainer.style.display = 'none';
+        return;
+    }
+    
+    // Hiển thị dropdown
+    dropdownContainer.style.display = 'block';
+    
+    // Nếu dropdown chưa có nội dung, load danh sách HDV
+    const selectId = `guideSelect_${maLich}`;
+    let guideSelect = document.getElementById(selectId);
+    
+    if (!guideSelect || dropdownContainer.innerHTML.trim() === '') {
+        // Hiển thị loading
+        dropdownContainer.innerHTML = '<select class="form-select form-select-sm" disabled><option>Đang tải...</option></select>';
+        
+        // Tạo dropdown mới
+        const token = localStorage.getItem('token');
+        let guideDropdown = `<select class="form-select form-select-sm" id="${selectId}" style="min-width: 200px;" onchange="handleGuideSelection('${maLich}', this.value, '${dateFrom}', '${dateTo}')">`;
+        guideDropdown += `<option value="" style="color: #dc3545; font-weight: bold;">❌ Gỡ HDV</option>`;
+        
+        try {
+            let availableGuidesUrl = `http://localhost:5000/api/admin/guides/available?date_from=${dateFrom}&date_to=${dateTo}&exclude_schedule=${maLich}`;
+            if (maTour) {
+                availableGuidesUrl += `&ma_tour=${encodeURIComponent(maTour)}`;
+            }
+            
+            const availableGuidesRes = await fetch(availableGuidesUrl, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (availableGuidesRes.ok) {
+                const guidesData = await availableGuidesRes.json();
+                if (guidesData.status === 'success' && guidesData.data.guides && guidesData.data.guides.length > 0) {
+                    guidesData.data.guides.forEach(guide => {
+                        guideDropdown += `<option value="${guide.Ma_huong_dan_vien}">👤 ${guide.Ten_huong_dan_vien} (${guide.So_dien_thoai})</option>`;
+                    });
+                } else {
+                    guideDropdown += `<option value="" disabled>Không có HDV rảnh</option>`;
+                }
+            } else {
+                guideDropdown += `<option value="" disabled>Lỗi tải danh sách HDV</option>`;
+            }
+        } catch (err) {
+            console.error('Error loading available guides:', err);
+            guideDropdown += `<option value="" disabled>Lỗi tải danh sách HDV</option>`;
+        }
+        
+        guideDropdown += '</select>';
+        dropdownContainer.innerHTML = guideDropdown;
+    }
+}
+
+// Hàm xử lý khi chọn HDV từ dropdown
+async function handleGuideSelection(maLich, maHuongDanVien, dateFrom, dateTo) {
+    // Ẩn dropdown ngay lập tức
+    const dropdownContainer = document.getElementById(`guideDropdown_${maLich}`);
+    if (dropdownContainer) {
+        dropdownContainer.style.display = 'none';
+    }
+    
+    // Nếu chọn "Gỡ HDV" (empty value), xác nhận trước
+    if (!maHuongDanVien || maHuongDanVien === '') {
+        if (!confirm('Bạn có chắc chắn muốn gỡ hướng dẫn viên khỏi lịch này?')) {
+            // Nếu không xác nhận, hiển thị lại dropdown
+            if (dropdownContainer) {
+                dropdownContainer.style.display = 'block';
+            }
+            return;
+        }
+    }
+    
+    await assignGuideToSchedule(maLich, maHuongDanVien, dateFrom, dateTo);
+    // Sau khi phân công thành công, reload để cập nhật UI
+    // (loadSchedules sẽ được gọi trong assignGuideToSchedule)
+}
+
+// Hàm xem chi tiết lịch (cho lịch đã diễn ra)
+async function viewSchedule(lichId) {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`http://localhost:5000/api/tours/schedules/${lichId}`, { 
+            method: 'GET', 
+            headers: { 'Authorization': `Bearer ${token}` } 
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const s = data.data.schedule;
+        
+        // Hiển thị modal với thông tin chi tiết (chỉ đọc)
+        const modalHTML = `
+            <div class="modal fade" id="viewScheduleModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Chi tiết Lịch khởi hành - ${s.Ma_lich}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Mã lịch:</strong> ${s.Ma_lich}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Mã tour:</strong> ${s.Ma_tour}
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Ngày bắt đầu:</strong> ${s.Ngay_bat_dau ? new Date(s.Ngay_bat_dau).toLocaleDateString('vi-VN') : 'N/A'}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Ngày kết thúc:</strong> ${s.Ngay_ket_thuc ? new Date(s.Ngay_ket_thuc).toLocaleDateString('vi-VN') : 'N/A'}
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Số chỗ:</strong> ${s.So_cho || 0}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Số chỗ đã đặt:</strong> ${s.bookedSeats || 0}
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Số chỗ còn lại:</strong> ${s.availableSeats || 0}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Hướng dẫn viên:</strong> ${s.Ten_huong_dan_vien || 'Chưa phân công'}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Xóa modal cũ nếu có
+        const oldModal = document.getElementById('viewScheduleModal');
+        if (oldModal) {
+            oldModal.remove();
+        }
+        
+        // Thêm modal mới vào body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Hiển thị modal
+        const modal = new bootstrap.Modal(document.getElementById('viewScheduleModal'));
+        modal.show();
+        
+        // Xóa modal khi đóng
+        document.getElementById('viewScheduleModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+    } catch (err) {
+        console.error('View schedule error:', err);
+        showAlert('danger', 'Không thể tải dữ liệu lịch');
     }
 }
 

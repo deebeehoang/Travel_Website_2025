@@ -26,7 +26,267 @@ html, body {
     max-width: 100%;
 }
 
-/* Sidebar */
+/* Modern Admin Sidebar với Categories */
+.admin-sidebar {
+    background: #1a1d29;
+    min-height: 100vh;
+    max-height: 100vh;
+    height: 100vh;
+    position: fixed;
+    width: 280px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    /* Custom scrollbar cho sidebar */
+    scrollbar-width: thin;
+    scrollbar-color: #667eea #2a2d3a;
+}
+
+/* Custom scrollbar cho webkit browsers (Chrome, Safari, Edge) */
+.admin-sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.admin-sidebar::-webkit-scrollbar-track {
+    background: #2a2d3a;
+    border-radius: 4px;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.admin-sidebar.collapsed {
+    width: 0;
+    overflow: hidden;
+}
+
+/* Sidebar Header */
+.sidebar-header {
+    padding: 1.5rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    background: #1a1d29;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.logo-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.logo-text h4 {
+    margin: 0;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.logo-text p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+.btn-close-sidebar {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.3s;
+    display: none; /* Ẩn trên desktop, hiện trên mobile */
+}
+
+.btn-close-sidebar:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* Navigation */
+.sidebar-nav {
+    flex: 1;
+    padding: 1rem 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Custom scrollbar cho navigation */
+    scrollbar-width: thin;
+    scrollbar-color: #667eea #2a2d3a;
+}
+
+/* Custom scrollbar cho sidebar-nav */
+.sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.5);
+    border-radius: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.8);
+}
+
+/* Nav Category */
+.nav-category {
+    margin-bottom: 0.5rem;
+}
+
+.category-header {
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    user-select: none;
+}
+
+.category-header:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.category-title {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.category-icon {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.7rem;
+    transition: transform 0.3s;
+}
+
+.nav-category.expanded .category-icon {
+    transform: rotate(0deg);
+}
+
+.nav-category:not(.expanded) .category-icon {
+    transform: rotate(-90deg);
+}
+
+/* Category Items */
+.category-items {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.category-items.collapsed {
+    max-height: 0;
+}
+
+.nav-category.expanded .category-items {
+    max-height: 1000px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+    position: relative;
+    border-left: 3px solid transparent;
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.nav-item.active {
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+    color: white;
+    border-left-color: #667eea;
+}
+
+.nav-item i {
+    width: 20px;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.nav-item span:not(.nav-badge) {
+    flex: 1;
+}
+
+/* Nav Badge */
+.nav-badge {
+    background: #ef4444;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+    padding: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+    margin-top: auto;
+    background: #1a1d29;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+}
+
+.logout-item {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.logout-item:hover {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #ef4444 !important;
+}
+
+/* Old sidebar styles - giữ lại để tương thích */
 .sidebar {
     background-color: #2c3e50;
     min-height: 100vh;
@@ -43,7 +303,6 @@ html, body {
     padding: 10px 0;
 }
 
-/* Nav link styles - chỉ áp dụng cho sidebar navigation, không ảnh hưởng đến Bootstrap tabs */
 .sidebar .nav-link {
     color: #ecf0f1 !important;
     padding: 10px 20px;
@@ -67,13 +326,241 @@ html, body {
 
 /* Main Content */
 .main-content {
-    margin-left: 250px;
-    width: calc(100% - 250px);
+    margin-left: 280px;
+    width: calc(100% - 280px);
     min-height: 100vh;
     padding: 15px;
     transition: all 0.3s;
     position: relative;
     overflow-x: hidden;
+}
+
+/* QUAN TRỌNG: Khi messagesSection active, main-content phải sát với sidebar */
+/* Sử dụng selector với specificity cao nhất để override Bootstrap */
+body.messages-active .main-content,
+body.messages-active .container-fluid.px-0 > .row.g-0 > .col.p-0 > .main-content,
+.main-content:has(#messagesSection.active) {
+    margin-left: 280px !important;
+    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    width: calc(100% - 280px) !important;
+}
+
+/* ============================================
+   FIX KHOẢNG TRỐNG MESSAGES SECTION - RULE MẠNH NHẤT
+   ============================================ */
+/* Khi messagesSection active, main-content phải sát với sidebar */
+body.messages-active .main-content,
+.main-content:has(#messagesSection.active) {
+    margin-left: 280px !important; /* Giữ margin-left bằng width của sidebar để sát với sidebar */
+    padding: 0 !important;
+    width: calc(100% - 280px) !important;
+}
+
+/* Đảm bảo col chứa main-content không có padding khi messagesSection active */
+body.messages-active .col.p-0,
+body.messages-active .col:not(.col-auto),
+.col:has(.main-content:has(#messagesSection.active)),
+.col:has(#messagesSection.active) {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding: 0 !important;
+}
+
+/* Khi sidebar collapsed */
+.admin-sidebar.collapsed ~ .col .main-content {
+    margin-left: 0;
+    width: 100%;
+}
+
+/* Messages Section - Loại bỏ padding và mở rộng sang trái */
+/* Sử dụng selector trực tiếp cho messagesSection.active để đảm bảo tương thích tốt hơn */
+
+/* Khi messagesSection active, loại bỏ tất cả padding/margin từ các phần tử cha */
+#messagesSection.active {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Loại bỏ padding của container-fluid và row khi messagesSection active */
+.container-fluid:has(.main-content:has(#messagesSection.active)),
+.container-fluid:has(#messagesSection.active) {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.row:has(.main-content:has(#messagesSection.active)),
+.row:has(#messagesSection.active) {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    --bs-gutter-x: 0 !important;
+    --bs-gutter-y: 0 !important;
+}
+
+/* Loại bỏ padding của col chứa main-content khi messagesSection active */
+.col:has(.main-content:has(#messagesSection.active)),
+.col:has(#messagesSection.active),
+.col.p-0:has(.main-content:has(#messagesSection.active)),
+/* Fallback: selector trực tiếp cho col chứa messagesSection */
+.col:has(#messagesSection.active) {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding: 0 !important;
+}
+
+/* Đảm bảo col chứa main-content không có padding - cách tiếp cận trực tiếp hơn */
+body:has(#messagesSection.active) .col:not(.col-auto),
+body:has(#messagesSection.active) .col.p-0 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* CSS trực tiếp cho messagesSection - không cần :has() */
+#messagesSection.active {
+    position: relative;
+    left: 0;
+    right: 0;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Đảm bảo admin-chat-container sát với cạnh trái của main-content */
+#messagesSection.active .admin-chat-container {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    margin-right: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Đảm bảo .col.p-0 thực sự không có padding khi messagesSection active */
+body:has(#messagesSection.active) .col.p-0 {
+    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Đảm bảo .row.g-0 không có gutter khi messagesSection active */
+body:has(#messagesSection.active) .row.g-0 {
+    --bs-gutter-x: 0 !important;
+    --bs-gutter-y: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Đảm bảo container-fluid.px-0 không có padding khi messagesSection active */
+body:has(#messagesSection.active) .container-fluid.px-0,
+body.messages-active .container-fluid.px-0 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* CSS sử dụng class messages-active trên body - tương thích tốt hơn */
+body.messages-active .col.p-0 {
+    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+body.messages-active .row.g-0 {
+    --bs-gutter-x: 0 !important;
+    --bs-gutter-y: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+body.messages-active .main-content {
+    padding: 0 !important;
+    margin-left: 280px !important;
+    width: calc(100% - 280px) !important;
+}
+
+body.messages-active .content-wrapper {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+body.messages-active #messagesSection {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+body.messages-active .admin-chat-container {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.main-content:has(#messagesSection.active) {
+    padding: 0 !important;
+    margin-left: 280px !important; /* Giữ margin-left bằng width của sidebar để sát với sidebar */
+    width: calc(100% - 280px) !important; /* Chiếm phần còn lại sau sidebar */
+    overflow: hidden;
+}
+
+/* Loại bỏ padding từ content-wrapper khi messagesSection active */
+.main-content:has(#messagesSection.active) .content-wrapper,
+.content-wrapper:has(#messagesSection.active) {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Loại bỏ padding từ Bootstrap col khi messagesSection active */
+.main-content:has(#messagesSection.active) .col,
+.main-content:has(#messagesSection.active) .col.p-0 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding: 0 !important;
+}
+
+/* Loại bỏ padding từ Bootstrap row khi messagesSection active */
+.main-content:has(#messagesSection.active) .row,
+.main-content:has(#messagesSection.active) .row.g-0 {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Đảm bảo messagesSection và các phần tử con không có margin/padding */
+.main-content:has(#messagesSection.active) #messagesSection,
+#messagesSection.active,
+#messagesSection.active * {
+    box-sizing: border-box;
+}
+
+/* Đảm bảo admin-chat-container không có margin/padding */
+.main-content:has(#messagesSection.active) .admin-chat-container,
+#messagesSection.active .admin-chat-container {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Đảm bảo chat-sidebar không có margin-left */
+.main-content:has(#messagesSection.active) .chat-sidebar,
+#messagesSection.active .chat-sidebar {
+    margin-left: 0 !important;
+}
+
+/* Đảm bảo không có gap giữa sidebar admin và messages section - Fallback cho trình duyệt không hỗ trợ :has() */
+body:has(#messagesSection.active) .container-fluid .row {
+    --bs-gutter-x: 0 !important;
+    --bs-gutter-y: 0 !important;
+}
+
+body:has(#messagesSection.active) .container-fluid .col-auto,
+body:has(#messagesSection.active) .container-fluid .col {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* CSS trực tiếp cho messagesSection.active - không cần :has() */
+#messagesSection.active ~ *,
+#messagesSection.active + * {
+    margin-left: 0 !important;
 }
 
 .content-wrapper {
@@ -123,6 +610,121 @@ html, body {
 
 .content-section.active {
     display: block;
+}
+
+/* Messages Section - Full height for chat - Override content-section styles */
+#messagesSection {
+    display: none !important; /* Ẩn mặc định như các content-section khác */
+    padding: 0 !important; /* Override padding từ content-section */
+    background-color: #f5f6fa;
+    height: calc(100vh - 20px);
+    margin: 0 !important; /* Loại bỏ tất cả margin */
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    width: 100% !important; /* Chiếm toàn bộ chiều rộng của content-wrapper */
+    max-width: none !important; /* Override max-width từ content-section */
+    flex-direction: column;
+    position: relative;
+    left: 0 !important;
+    right: 0 !important;
+    top: 0 !important;
+}
+
+#messagesSection.active {
+    display: flex !important;
+    flex-direction: column;
+}
+
+/* Messages Top Header - Tích hợp vào chat container */
+.messages-top-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.messages-header-left h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.messages-header-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.btn-notification {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    position: relative;
+    font-size: 1.2rem;
+}
+
+.btn-notification:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ef4444;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+}
+
+.admin-email {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.admin-avatar-small {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    overflow: hidden;
+}
+
+.admin-avatar-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 /* Cards */
@@ -1058,25 +1660,43 @@ button.btn.btn-sm.btn-secondary:hover {
    =============================== */
 .admin-chat-container {
   display: flex;
+  flex-direction: column;
   gap: 0;
-  margin-top: 20px;
-  height: calc(100vh - 200px);
+  margin: 0 !important;
+  padding: 0 !important;
+  height: calc(100vh - 20px);
   min-height: 600px;
-  border-radius: 12px;
+  border-radius: 0;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  background: #fff;
+  box-shadow: none;
+  background: #f5f6fa;
+  flex: 1;
+  width: 100%;
+}
+
+/* Chat Content Wrapper - Chứa sidebar và chat main */
+.chat-content-wrapper {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100vh - 80px);
+  background: #f5f6fa;
 }
 
 /* ========== SIDEBAR: DANH SÁCH NGƯỜI DÙNG ========== */
 .chat-sidebar {
-  width: 320px;
-  background: #f8f9fa;
+  width: 350px;
+  background: #ffffff;
   border-right: 1px solid #e9ecef;
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
   flex-shrink: 0;
+  padding: 0 !important;
+  margin: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
 }
 
 .chat-sidebar.collapsed {
@@ -1086,13 +1706,51 @@ button.btn.btn-sm.btn-secondary:hover {
 }
 
 .chat-sidebar-header {
-  padding: 20px;
+  padding: 15px 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.btn-back-sidebar {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.btn-back-sidebar:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+.chat-sidebar-header h4 {
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .chat-sidebar-header h4 {
@@ -1128,9 +1786,11 @@ button.btn.btn-sm.btn-secondary:hover {
 /* Tìm kiếm người dùng */
 .chat-search-box {
   position: relative;
-  padding: 15px;
-  background: #fff;
+  padding: 12px 15px;
+  background: #f8f9fa;
   border-bottom: 1px solid #e9ecef;
+  margin: 0;
+  width: 100%;
 }
 
 .chat-search-box i {
@@ -1181,12 +1841,33 @@ button.btn.btn-sm.btn-secondary:hover {
   flex: 1;
   overflow-y: auto;
   background: #fff;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Custom scrollbar cho user list */
+.user-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.user-list-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.user-list-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.user-list-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
 .user-list-items {
   list-style: none;
-  padding: 0;
-  margin: 0;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100%;
 }
 
 .user-list-empty {
@@ -1207,13 +1888,22 @@ button.btn.btn-sm.btn-secondary:hover {
 }
 
 .user-list-items li:not(.user-list-empty) {
-  padding: 12px 15px;
+  padding: 14px 15px;
+  padding-left: 15px !important; /* Đảm bảo padding trái nhất quán */
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 12px;
+  margin: 0 !important;
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.user-list-items li:not(.user-list-empty):first-child {
+  border-top: 1px solid #f0f0f0;
 }
 
 .user-list-items li:not(.user-list-empty):hover {
@@ -1223,6 +1913,7 @@ button.btn.btn-sm.btn-secondary:hover {
 .user-list-items li:not(.user-list-empty).active {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  border-left: 3px solid #fff;
 }
 
 .user-list-items li:not(.user-list-empty).active .user-name,
@@ -1315,6 +2006,38 @@ button.btn.btn-sm.btn-secondary:hover {
   flex-direction: column;
   background: #fff;
   min-width: 0;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+/* Nút hiển thị lại sidebar khi bị ẩn */
+.btn-show-sidebar {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-show-sidebar:hover {
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-show-sidebar i {
+  font-size: 1rem;
 }
 
 /* HEADER */
@@ -1425,13 +2148,31 @@ button.btn.btn-sm.btn-secondary:hover {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  background: #f8f9fa;
+  background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
   display: flex;
   flex-direction: column;
   gap: 12px;
   scroll-behavior: smooth;
   word-break: break-word;
   overflow-wrap: anywhere;
+}
+
+/* Custom scrollbar cho chat messages */
+.chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
 .chat-empty-state {
@@ -1611,6 +2352,7 @@ button.btn.btn-sm.btn-secondary:hover {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .chat-input-toolbar {
@@ -1984,5 +2726,127 @@ button.btn.btn-sm.btn-secondary:hover {
 #bookingDetailModal .badge {
   font-size: 0.9rem;
   padding: 0.5em 0.75em;
+}
+
+/* ============================================
+   FIX KHOẢNG TRỐNG MESSAGES - RULE MẠNH NHẤT (CUỐI FILE)
+   Override tất cả CSS rules khác
+   ============================================ */
+/* Rule mạnh nhất - đặt ở cuối file để override tất cả */
+body.messages-active .container-fluid.px-0 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding: 0 !important;
+}
+
+body.messages-active .row.g-0 {
+    --bs-gutter-x: 0 !important;
+    --bs-gutter-y: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* QUAN TRỌNG: Loại bỏ HOÀN TOÀN padding của col */
+body.messages-active .col.p-0,
+body.messages-active .col:not(.col-auto) {
+    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* QUAN TRỌNG: Main-content phải có margin-left: 280px và padding: 0 */
+body.messages-active .main-content {
+    margin-left: 280px !important;
+    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    width: calc(100% - 280px) !important;
+}
+
+/* QUAN TRỌNG: Content-wrapper không có padding */
+body.messages-active .content-wrapper {
+    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* QUAN TRỌNG: MessagesSection không có margin, bắt đầu từ cạnh trái của main-content */
+body.messages-active #messagesSection,
+body.messages-active #messagesSection.active {
+    margin: 0 !important;
+    margin-left: 0 !important;
+    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    width: 100% !important;
+    position: relative;
+    left: 0 !important;
+}
+
+/* QUAN TRỌNG: Admin-chat-container không có margin/padding */
+body.messages-active .admin-chat-container {
+    margin: 0 !important;
+    margin-left: 0 !important;
+    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    width: 100% !important;
+}
+
+/* ============================================
+   OVERRIDE BOOTSTRAP - RULE CUỐI CÙNG, MẠNH NHẤT
+   ============================================ */
+/* Override tất cả Bootstrap padding/margin cho messages section */
+body.messages-active .container-fluid.px-0 > .row.g-0 > .col.p-0 > .main-content {
+    margin-left: 280px !important;
+    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    width: calc(100% - 280px) !important;
+}
+
+body.messages-active .container-fluid.px-0 > .row.g-0 > .col.p-0 {
+    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+body.messages-active .container-fluid.px-0 > .row.g-0 {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    --bs-gutter-x: 0 !important;
+    --bs-gutter-y: 0 !important;
+}
+
+body.messages-active .container-fluid.px-0 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+body.messages-active .main-content > .content-wrapper {
+    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin: 0 !important;
+}
+
+body.messages-active .main-content > .content-wrapper > #messagesSection {
+    margin: 0 !important;
+    margin-left: 0 !important;
+    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    width: 100% !important;
 }
 
