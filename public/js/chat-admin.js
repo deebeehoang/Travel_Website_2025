@@ -117,9 +117,26 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Toggle sidebar
+  const showSidebarBtn = document.getElementById('showSidebarBtn');
+  
   toggleSidebarBtn?.addEventListener('click', () => {
     chatSidebar.classList.toggle('collapsed');
+    // Hiển thị/ẩn nút show sidebar
+    if (showSidebarBtn) {
+      showSidebarBtn.style.display = chatSidebar.classList.contains('collapsed') ? 'flex' : 'none';
+    }
   });
+  
+  // Hiển thị lại sidebar khi click nút show
+  showSidebarBtn?.addEventListener('click', () => {
+    chatSidebar.classList.remove('collapsed');
+    showSidebarBtn.style.display = 'none';
+  });
+  
+  // Kiểm tra trạng thái ban đầu
+  if (showSidebarBtn && chatSidebar) {
+    showSidebarBtn.style.display = chatSidebar.classList.contains('collapsed') ? 'flex' : 'none';
+  }
 
   // Quick replies
   document.querySelectorAll('.quick-reply-btn').forEach(btn => {

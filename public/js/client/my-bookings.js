@@ -179,18 +179,8 @@ function displayBookings(bookings) {
         // Tính thời gian còn lại cho booking "Chờ thanh toán" hoặc hiển thị thông báo hết hạn
         let countdownHtml = '';
         if (statusClass === 'status-expired' || booking.Trang_thai_booking === 'Het_han' || booking.Trang_thai_booking === 'Hết hạn') {
-            // Booking đã hết hạn
-            countdownHtml = `
-                <div class="countdown-timer mb-3 p-2 bg-danger bg-opacity-10 rounded border border-danger">
-                    <div class="text-danger fw-bold text-center">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Đã hết thời gian thanh toán
-                    </div>
-                    <div class="text-muted text-center mt-2 small">
-                        Booking này đã hết hạn và không thể thanh toán
-                    </div>
-                </div>
-            `;
+            // Booking đã hết hạn - không hiển thị countdown, sẽ hiển thị alert trong card body
+            countdownHtml = '';
         } else if (statusClass === 'status-pending' && booking.Trang_thai_booking === 'Chờ thanh toán') {
             // Tính expires_at: nếu có expires_at thì dùng, nếu không thì tính từ Ngay_dat + 10 phút
             const expiresAt = booking.expires_at 
@@ -202,13 +192,13 @@ function displayBookings(bookings) {
             
             if (timeRemaining > 0) {
                 countdownHtml = `
-                    <div class="countdown-timer mb-3 p-2 bg-warning bg-opacity-10 rounded border border-warning">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <span class="text-warning fw-bold">
-                                <i class="fas fa-hourglass-half me-2"></i>
+                    <div class="countdown-timer bg-warning">
+                        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                            <span style="color: #856404; font-weight: bold;">
+                                <i class="fas fa-hourglass-half"></i>
                                 Còn lại để thanh toán:
                             </span>
-                            <span class="countdown-display text-danger fw-bold" data-expires="${expiresAt.toISOString()}">
+                            <span class="countdown-display" data-expires="${expiresAt.toISOString()}" style="color: #856404; font-weight: bold;">
                                 ${formatCountdown(timeRemaining)}
                             </span>
                         </div>
@@ -216,9 +206,9 @@ function displayBookings(bookings) {
                 `;
             } else {
                 countdownHtml = `
-                    <div class="countdown-timer mb-3 p-2 bg-danger bg-opacity-10 rounded border border-danger">
-                        <div class="text-danger fw-bold text-center">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
+                    <div class="countdown-timer">
+                        <div style="text-align: center; color: #c92a2a; font-weight: bold;">
+                            <i class="fas fa-exclamation-triangle"></i>
                             Đã hết thời gian thanh toán
                         </div>
                     </div>
@@ -226,86 +216,95 @@ function displayBookings(bookings) {
             }
         }
         
-        // Tạo HTML cho booking card
+        // Xác định class cho card header dựa trên status
+        let headerStatusClass = 'status-pending';
+        let statusIcon = 'clock';
+        if (statusClass === 'status-paid') {
+            headerStatusClass = 'status-success';
+            statusIcon = 'check-circle';
+        } else if (statusClass === 'status-expired') {
+            headerStatusClass = 'status-expired';
+            statusIcon = 'exclamation-triangle';
+        } else if (statusClass === 'status-cancelled') {
+            headerStatusClass = 'status-cancelled';
+            statusIcon = 'times-circle';
+        }
+
+        // Tạo HTML cho booking card theo giao diện mới
         const bookingCard = `
-            <div class="col-md-6 col-lg-4">
-                <div class="card booking-card h-100 shadow-sm ${statusClass}">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">${tourName}</h5>
-                        <span class="booking-status ${statusClass}">
-                            <i class="fas fa-${statusClass === 'status-paid' ? 'check-circle' : (statusClass === 'status-cancelled' ? 'times-circle' : (statusClass === 'status-expired' ? 'exclamation-triangle' : 'clock'))}"></i>
-                            ${statusText}
-                        </span>
+            <div class="tour-card">
+                <div class="card-header ${headerStatusClass}">
+                    <div class="tour-id">Tour</div>
+                    <div class="tour-number">#${booking.Ma_booking}</div>
+                    <div class="status-badge ${statusClass.replace('status-', '')}">
+                        <i class="fas fa-${statusIcon}"></i>
+                        ${statusText}
                     </div>
-                    <div class="card-body">
-                        ${countdownHtml}
-                        <div class="booking-info">
-                            <div class="booking-info-item">
-                                <i class="fas fa-calendar-alt"></i>
-                                <span>Ngày khởi hành: ${tourStartDate}</span>
-                            </div>
-                            <div class="booking-info-item">
-                                <i class="fas fa-users"></i>
-                                <span>${booking.So_nguoi_lon} người lớn, ${booking.So_tre_em} trẻ em</span>
-                            </div>
-                            <div class="booking-info-item">
-                                <i class="fas fa-clock"></i>
-                                <span class="tour-duration">
-                                    <i class="fas fa-sun"></i>${calculateDuration(booking.Ngay_bat_dau, booking.Ngay_ket_thuc)}
-                                </span>
-                            </div>
+                </div>
+                <div class="card-body">
+                    ${countdownHtml ? countdownHtml.replace('countdown-timer mb-3', 'countdown-timer') : ''}
+                    ${(statusClass === 'status-expired' || booking.Trang_thai_booking === 'Het_han' || booking.Trang_thai_booking === 'Hết hạn') ? `
+                    <div class="alert">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div class="alert-text">
+                            <strong>Đã hết thời gian thanh toán</strong><br>
+                            Booking này đã hết hạn và không thể thanh toán
                         </div>
-                        
-                        <div class="booking-info">
-                            <div class="booking-info-item">
-                                <i class="fas fa-map-marker-alt"></i>
-                                <span>${booking.Diem_den || 'Chưa có thông tin'}</span>
-                            </div>
-                            <div class="booking-info-item">
-                                <i class="fas fa-receipt"></i>
-                                <span>Mã đặt tour: #${booking.Ma_booking}</span>
-                            </div>
-                        </div>
-                        
-                        ${booking.So_dich_vu_da_dat ? `
-                        <div class="booking-info-item mt-2">
-                            <i class="fas fa-concierge-bell"></i>
-                            <span>${booking.So_dich_vu_da_dat} dịch vụ đã đặt</span>
-                        </div>
-                        ` : ''}
                     </div>
-                    <div class="card-footer">
-                        <div>
-                            <p class="booking-price">${formatCurrency(booking.Tong_tien)}</p>
-                            <p class="booking-date">Đặt ngày: ${bookingDate}</p>
+                    ` : ''}
+                    <div class="tour-details">
+                        <div class="detail-item">
+                            <i class="far fa-calendar-alt"></i>
+                            <span class="detail-text">Ngày khởi hành: ${tourStartDate}</span>
                         </div>
-                        <div class="booking-actions">
-                            ${booking.Trang_thai_booking === 'Da_huy' || booking.Trang_thai_booking === 'Hủy' ? `
-                                <button class="btn btn-secondary" disabled>
-                                    <i class="fas fa-times-circle"></i>Tour đã hủy
-                                </button>
-                            ` : (booking.Trang_thai_booking === 'Het_han' || booking.Trang_thai_booking === 'Hết hạn') ? `
-                                <button class="btn btn-danger" disabled>
-                                    <i class="fas fa-exclamation-triangle"></i>Đã hết hạn
-                                </button>
-                            ` : (booking.Trang_thai_booking === 'Da_thanh_toan' || booking.Trang_thai === 'Đã thanh toán' || booking.Trang_thai_booking === 'Đã thanh toán' || booking.Trang_thai_booking === 'Paid') ? `
-                                <div class="d-flex gap-2 flex-wrap">
-                                    <button class="btn btn-info btn-sm" onclick="viewBookingDetails('${booking.Ma_booking}')" style="flex: 0 0 auto;">
-                                        <i class="fas fa-info-circle"></i>Xem thông tin
-                                    </button>
-                                    <button class="btn btn-success btn-sm" disabled>
-                                        <i class="fas fa-check-circle"></i>Đã thanh toán
-                                    </button>
-                                    <button class="btn btn-warning btn-sm" onclick="checkAndRateTour('${booking.Ma_booking}')" id="rate-btn-${booking.Ma_booking}">
-                                        <i class="fas fa-star"></i>Đánh giá
-                                    </button>
-                                </div>
-                            ` : `
-                                <button class="btn btn-primary" onclick="redirectToPayment('${booking.Ma_booking}', ${booking.Tong_tien})">
-                                    <i class="fas fa-credit-card"></i>Thanh toán ngay
-                                </button>
-                            `}
+                        <div class="detail-item">
+                            <i class="fas fa-users"></i>
+                            <span class="detail-text">${booking.So_nguoi_lon} người lớn, ${booking.So_tre_em} trẻ em</span>
                         </div>
+                        <div class="detail-item">
+                            <i class="far fa-clock"></i>
+                            <i class="fas fa-info-circle" style="color: #6c757d; font-size: 0.9rem;"></i>
+                            <span class="detail-text">${calculateDuration(booking.Ngay_bat_dau, booking.Ngay_ket_thuc) || 'Chưa có thông tin'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span class="detail-text">${booking.Diem_den || 'Chưa có thông tin'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-ticket-alt"></i>
+                            <div style="flex: 1;">
+                                <span class="detail-text">Mã đặt tour:</span>
+                                <div class="booking-code">#${booking.Ma_booking}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="price-section">
+                        <div class="price">${formatCurrency(booking.Tong_tien).replace('₫', 'đ')}</div>
+                        <div class="booking-date">Đặt ngày: ${bookingDate}</div>
+                    </div>
+                    <div class="action-buttons">
+                        ${booking.Trang_thai_booking === 'Da_huy' || booking.Trang_thai_booking === 'Hủy' ? `
+                            <button class="btn-action btn-cancel" disabled>
+                                <i class="fas fa-times-circle"></i> Tour đã hủy
+                            </button>
+                        ` : (booking.Trang_thai_booking === 'Het_han' || booking.Trang_thai_booking === 'Hết hạn') ? `
+                            <button class="btn-action btn-cancel" disabled>
+                                <i class="fas fa-times-circle"></i> Đã hết hạn
+                            </button>
+                        ` : (booking.Trang_thai_booking === 'Da_thanh_toan' || booking.Trang_thai === 'Đã thanh toán' || booking.Trang_thai_booking === 'Đã thanh toán' || booking.Trang_thai_booking === 'Paid') ? `
+                            <button class="btn-action btn-info" onclick="viewBookingDetails('${booking.Ma_booking}')">
+                                <i class="fas fa-info-circle"></i> Chi tiết
+                            </button>
+                            <button class="btn-action btn-rate" onclick="checkAndRateTour('${booking.Ma_booking}')" id="rate-btn-${booking.Ma_booking}">
+                                <i class="fas fa-star"></i> Đánh giá
+                            </button>
+                        ` : `
+                            <button class="btn-action btn-payment" onclick="redirectToPayment('${booking.Ma_booking}', ${booking.Tong_tien})">
+                                <i class="fas fa-credit-card"></i> Thanh toán ngay
+                            </button>
+                        `}
                     </div>
                 </div>
             </div>
@@ -358,21 +357,21 @@ function updateCountdown(display, expiresAt) {
     
     if (timeRemaining > 0) {
         display.textContent = formatCountdown(timeRemaining);
-        display.classList.remove('text-danger');
-        display.classList.add('text-warning');
+        display.style.color = '#856404';
         return true;
     } else {
         display.textContent = '00:00';
-        display.classList.remove('text-warning');
-        display.classList.add('text-danger');
+        display.style.color = '#c92a2a';
         
         // Cập nhật parent container
         const timerContainer = display.closest('.countdown-timer');
         if (timerContainer) {
-            timerContainer.className = 'countdown-timer mb-3 p-2 bg-danger bg-opacity-10 rounded border border-danger';
+            timerContainer.className = 'countdown-timer';
+            timerContainer.style.background = '#fff5f5';
+            timerContainer.style.border = '1px solid #ff6b6b';
             timerContainer.innerHTML = `
-                <div class="text-danger fw-bold text-center">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
+                <div style="text-align: center; color: #c92a2a; font-weight: bold;">
+                    <i class="fas fa-exclamation-triangle"></i>
                     Đã hết thời gian thanh toán
                 </div>
             `;

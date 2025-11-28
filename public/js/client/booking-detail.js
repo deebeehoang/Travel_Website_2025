@@ -115,13 +115,34 @@ function displayTourInfo(tour) {
         return;
     }
 
-    const tourImage = tour.Hinh_anh || tour.Anh_tour || '/images/default-tour.jpg';
-    const imageUrl = tourImage.startsWith('http') ? tourImage : 
-                     tourImage.startsWith('/') ? `/images${tourImage}` : 
-                     `/images/${tourImage}`;
+    // Xử lý đường dẫn hình ảnh tour
+    let tourImage = tour.Hinh_anh || tour.Anh_tour || '';
+    let imageUrl = '/images/tour-placeholder.jpg'; // Ảnh mặc định
+    
+    if (tourImage) {
+        if (tourImage.startsWith('http://') || tourImage.startsWith('https://')) {
+            // URL đầy đủ
+            imageUrl = tourImage;
+        } else if (tourImage.startsWith('/images/')) {
+            // Đã có /images/, dùng trực tiếp
+            imageUrl = tourImage;
+        } else if (tourImage.startsWith('/uploads/')) {
+            // Có /uploads/, thêm /images vào trước
+            imageUrl = '/images' + tourImage;
+        } else if (tourImage.startsWith('uploads/')) {
+            // Có uploads/ không có dấu / đầu
+            imageUrl = '/images/' + tourImage;
+        } else if (tourImage.startsWith('/')) {
+            // Bắt đầu bằng / nhưng không phải /images/ hoặc /uploads/
+            imageUrl = '/images' + tourImage;
+        } else {
+            // Đường dẫn tương đối
+            imageUrl = '/images/' + tourImage;
+        }
+    }
 
     let html = `
-        <img src="${imageUrl}" alt="${tour.Ten_tour || 'Tour'}" class="tour-image" onerror="this.src='/images/default-tour.jpg'">
+        <img src="${imageUrl}" alt="${tour.Ten_tour || 'Tour'}" class="tour-image" onerror="this.src='/images/tour-placeholder.jpg'">
         <div class="info-row">
             <div class="info-label"><i class="fas fa-map-marked-alt me-2"></i>Tên tour:</div>
             <div class="info-value"><strong>${tour.Ten_tour || 'N/A'}</strong></div>
@@ -236,13 +257,28 @@ function displayGuideInfo(guide) {
         return;
     }
 
-    let avatarUrl = guide.Anh_dai_dien || '/images/default-avatar.jpg';
-    if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
-        if (avatarUrl.startsWith('/uploads')) {
+    // Xử lý đường dẫn avatar HDV
+    let avatarUrl = guide.Anh_dai_dien || '/images/placeholder.jpg';
+    
+    if (avatarUrl && !avatarUrl.startsWith('http://') && !avatarUrl.startsWith('https://') && !avatarUrl.startsWith('data:')) {
+        if (avatarUrl.startsWith('/images/')) {
+            // Đã có /images/, dùng trực tiếp
+            avatarUrl = avatarUrl;
+        } else if (avatarUrl.startsWith('/uploads/')) {
+            // Có /uploads/, thêm /images vào trước
             avatarUrl = '/images' + avatarUrl;
-        } else if (!avatarUrl.startsWith('/images')) {
+        } else if (avatarUrl.startsWith('uploads/')) {
+            // Có uploads/ không có dấu / đầu
+            avatarUrl = '/images/' + avatarUrl;
+        } else if (avatarUrl.startsWith('/')) {
+            // Bắt đầu bằng / nhưng không phải /images/ hoặc /uploads/
+            avatarUrl = '/images' + avatarUrl;
+        } else {
+            // Đường dẫn tương đối
             avatarUrl = '/images/' + avatarUrl;
         }
+        
+        // Xử lý trường hợp trùng lặp /images/images/
         if (avatarUrl.startsWith('/images/images/')) {
             avatarUrl = avatarUrl.replace('/images/images/', '/images/');
         }
@@ -254,7 +290,7 @@ function displayGuideInfo(guide) {
 
     let html = `
         <div class="guide-card">
-            <img src="${avatarUrl}" alt="${guide.Ten_huong_dan_vien}" class="guide-avatar" onerror="this.src='/images/default-avatar.jpg'">
+            <img src="${avatarUrl}" alt="${guide.Ten_huong_dan_vien}" class="guide-avatar" onerror="this.src='/images/placeholder.jpg'">
             <div class="flex-grow-1">
                 <h6 class="mb-2"><i class="fas fa-user-tie me-2"></i>${guide.Ten_huong_dan_vien || 'N/A'}</h6>
                 ${avgRating > 0 ? `

@@ -56,72 +56,172 @@
           height: auto !important;
           display: block;
         }
+        /* Fix khoảng trống messages - override inline styles */
+        body.messages-active .main-content {
+          padding: 0 !important;
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+          padding-top: 0 !important;
+          padding-bottom: 0 !important;
+        }
     </style>
 </head>
 
 <body>
     <div class="container-fluid px-0">
         <div class="row g-0">
-            <!-- Sidebar -->
+            <!-- Modern Sidebar với Categories -->
             <div class="col-auto p-0">
-                <div class="sidebar">
-                    <div class="text-center text-white mb-4">
-                        <h4><i class="fas fa-globe-asia"></i> Travel Admin</h4>
+                <div class="admin-sidebar">
+                    <!-- Sidebar Header -->
+                    <div class="sidebar-header">
+                        <div class="sidebar-logo">
+                            <div class="logo-icon">
+                                <i class="fas fa-plane"></i>
+                            </div>
+                            <div class="logo-text">
+                                <h4>Travel Admin</h4>
+                                <p>Quản lý tour du lịch</p>
+                            </div>
+                        </div>
+                        <button class="btn-close-sidebar" id="closeSidebarBtn" title="Đóng sidebar">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
-                    <nav class="nav flex-column">
-                        <a class="nav-link active" href="#dashboard" id="navDashboard">
-                            <i class="fas fa-chart-bar"></i> Thống kê - Báo cáo
-                        </a>
-                        <a class="nav-link" href="#tours" id="navTours">
-                            <i class="fas fa-map-marked-alt"></i> Quản lý Tour
-                        </a>
-                        <a class="nav-link" href="#destinations" id="navDestinations">
-                            <i class="fas fa-map-marker-alt"></i> Quản lý Điểm đến
-                        </a>
-                        <a class="nav-link" href="#services" id="navServices">
-                            <i class="fas fa-concierge-bell"></i> Quản lý Dịch vụ
-                        </a>
-                        <a class="nav-link" href="#tickets" id="navTickets">
-                            <i class="fas fa-ticket-alt"></i> Quản lý Vé
-                        </a>
-                        <a class="nav-link" href="#bookings" id="navBookings">
-                            <i class="fas fa-calendar-check"></i> Quản lý Booking
-                        </a>
-                        <a class="nav-link" href="#paymentConfirmation" id="navPaymentConfirmation">
-                            <i class="fas fa-credit-card"></i> Xác nhận thanh toán
-                        </a>
-                        <!-- <a class="nav-link" href="#cancelRequests" id="navCancelRequests">
-                            <i class="fas fa-ban"></i> Yêu cầu hủy tour
-                        </a> -->
-                        <a class="nav-link" href="#schedules" id="navSchedules">
-                            <i class="fas fa-calendar-alt"></i> Quản lý Lịch khởi hành
-                        </a>
-                        <a class="nav-link" href="#guides" id="navGuides">
-                            <i class="fas fa-user-tie"></i> Quản lý Hướng dẫn viên
-                        </a>
-                        <a class="nav-link" href="#users" id="navUsers">
-                            <i class="fas fa-users"></i> Quản lý người dùng
-                        </a>
-                        <a class="nav-link" href="#ratings" id="navRatings">
-                            <i class="fas fa-star"></i> Quản lý đánh giá
-                        </a>
-                        <a class="nav-link" href="#promotions" id="navPromotions">
-                            <i class="fas fa-tags"></i> Quản lý khuyến mãi
-                        </a>
-                        <!-- <a class="nav-link" href="#settings" id="navSettings">
-                            <i class="fas fa-cog"></i> Cài đặt
-                        </a> -->
-                        <a class="nav-link" href="#" id="logoutBtn">
-                            <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                        </a>
+
+                    <!-- Navigation Menu -->
+                    <nav class="sidebar-nav">
+                        <!-- HỆ THỐNG -->
+                        <div class="nav-category">
+                            <div class="category-header" data-category="system">
+                                <span class="category-title">HỆ THỐNG</span>
+                                <i class="fas fa-chevron-down category-icon"></i>
+                            </div>
+                            <div class="category-items" id="category-system">
+                                <a class="nav-item" href="#dashboard" id="navDashboard">
+                                    <i class="fas fa-th-large"></i>
+                                    <span>Tổng quan</span>
+                                </a>
+                                <!-- <a class="nav-item" href="#statistics" id="navStatistics">
+                                    <i class="fas fa-chart-bar"></i>
+                                    <span>Thống kê - Báo cáo</span>
+                                </a>
+                                <a class="nav-item" href="#settings" id="navSettings">
+                                    <i class="fas fa-cog"></i>
+                                    <span>Cài đặt hệ thống</span>
+                                </a> -->
+                            </div>
+                        </div>
+
+                        <!-- QUẢN LÝ NỘI DUNG -->
+                        <div class="nav-category">
+                            <div class="category-header" data-category="content">
+                                <span class="category-title">QUẢN LÝ NỘI DUNG</span>
+                                <i class="fas fa-chevron-down category-icon"></i>
+                            </div>
+                            <div class="category-items" id="category-content">
+                                <a class="nav-item" href="#tours" id="navTours">
+                                    <i class="fas fa-map-marked-alt"></i>
+                                    <span>Quản lý Tour</span>
+                                    <span class="nav-badge" id="badge-tours" style="display: none;">0</span>
+                                </a>
+                                <a class="nav-item" href="#destinations" id="navDestinations">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span>Quản lý Điểm đến</span>
+                                </a>
+                                <a class="nav-item" href="#services" id="navServices">
+                                    <i class="fas fa-concierge-bell"></i>
+                                    <span>Quản lý Dịch vụ</span>
+                                </a>
+                                <a class="nav-item" href="#schedules" id="navSchedules">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span>Quản lý Lịch khởi hành</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- QUẢN LÝ KINH DOANH -->
+                        <div class="nav-category">
+                            <div class="category-header" data-category="business">
+                                <span class="category-title">QUẢN LÝ KINH DOANH</span>
+                                <i class="fas fa-chevron-down category-icon"></i>
+                            </div>
+                            <div class="category-items" id="category-business">
+                                <a class="nav-item" href="#bookings" id="navBookings">
+                                    <i class="fas fa-book-open"></i>
+                                    <span>Quản lý Booking</span>
+                                    <span class="nav-badge" id="badge-bookings" style="display: none;">0</span>
+                                </a>
+                                <a class="nav-item" href="#paymentConfirmation" id="navPaymentConfirmation">
+                                    <i class="fas fa-credit-card"></i>
+                                    <span>Xác nhận thanh toán</span>
+                                    <span class="nav-badge" id="badge-payment" style="display: none;">0</span>
+                                </a>
+                                <a class="nav-item" href="#tickets" id="navTickets">
+                                    <i class="fas fa-ticket-alt"></i>
+                                    <span>Quản lý Vé</span>
+                                </a>
+                                <a class="nav-item" href="#promotions" id="navPromotions">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span>Quản lý Khuyến mãi</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- QUẢN LÝ NGƯỜI DÙNG -->
+                        <div class="nav-category">
+                            <div class="category-header" data-category="users">
+                                <span class="category-title">QUẢN LÝ NGƯỜI DÙNG</span>
+                                <i class="fas fa-chevron-right category-icon"></i>
+                            </div>
+                            <div class="category-items collapsed" id="category-users">
+                                <a class="nav-item" href="#users" id="navUsers">
+                                    <i class="fas fa-users"></i>
+                                    <span>Quản lý người dùng</span>
+                                </a>
+                                <a class="nav-item" href="#guides" id="navGuides">
+                                    <i class="fas fa-user-tie"></i>
+                                    <span>Quản lý Hướng dẫn viên</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- GIAO TIẾP & ĐÁNH GIÁ -->
+                        <div class="nav-category">
+                            <div class="category-header" data-category="communication">
+                                <span class="category-title">GIAO TIẾP & ĐÁNH GIÁ</span>
+                                <i class="fas fa-chevron-down category-icon"></i>
+                            </div>
+                            <div class="category-items" id="category-communication">
+                                <a class="nav-item active" href="#messages" id="navMessages">
+                                    <i class="fas fa-comments"></i>
+                                    <span>Tin nhắn</span>
+                                    <span class="nav-badge" id="badge-messages" style="display: none;">0</span>
+                                </a>
+                                <a class="nav-item" href="#ratings" id="navRatings">
+                                    <i class="fas fa-star"></i>
+                                    <span>Quản lý đánh giá</span>
+                                    <span class="nav-badge" id="badge-ratings" style="display: none;">0</span>
+                                </a>
+                            </div>
+                        </div>
                     </nav>
+
+                    <!-- Logout Button -->
+                    <div class="sidebar-footer">
+                        <a class="nav-item logout-item" href="#" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Đăng xuất</span>
+                        </a>
+                    </div>
                 </div>
             </div>
 
             <!-- Main content -->
             <div class="col p-0">
                 <div class="main-content">
-                    <div class="admin-header">
+                    <!-- Admin Header - Ẩn khi ở section Messages -->
+                    <div class="admin-header" id="adminHeader">
                         <div class="d-flex justify-content-between align-items-center">
                             <h2 id="sectionTitle">Tổng quan hệ thống</h2>
                             <div class="user-info d-flex align-items-center">
@@ -1710,33 +1810,237 @@
         });
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Setup Sidebar Categories Expand/Collapse
+            document.querySelectorAll('.category-header').forEach(header => {
+                header.addEventListener('click', function() {
+                    const category = this.closest('.nav-category');
+                    const categoryId = this.dataset.category;
+                    const categoryItems = document.getElementById(`category-${categoryId}`);
+                    
+                    if (category) {
+                        category.classList.toggle('expanded');
+                        if (categoryItems) {
+                            categoryItems.classList.toggle('collapsed');
+                        }
+                        
+                        // Update icon
+                        const icon = this.querySelector('.category-icon');
+                        if (icon) {
+                            if (category.classList.contains('expanded')) {
+                                icon.classList.remove('fa-chevron-right');
+                                icon.classList.add('fa-chevron-down');
+                            } else {
+                                icon.classList.remove('fa-chevron-down');
+                                icon.classList.add('fa-chevron-right');
+                            }
+                        }
+                    }
+                });
+            });
+            
+            // Expand default categories on load
+            document.querySelectorAll('.nav-category').forEach(category => {
+                const categoryId = category.querySelector('.category-header')?.dataset.category;
+                if (categoryId && ['system', 'content', 'business', 'communication'].includes(categoryId)) {
+                    category.classList.add('expanded');
+                    const categoryItems = document.getElementById(`category-${categoryId}`);
+                    if (categoryItems) {
+                        categoryItems.classList.remove('collapsed');
+                    }
+                    const icon = category.querySelector('.category-icon');
+                    if (icon) {
+                        icon.classList.remove('fa-chevron-right');
+                        icon.classList.add('fa-chevron-down');
+                    }
+                }
+            });
+            
             // Navigation and section handling
-            // Chỉ chọn các nav link có href bắt đầu bằng #
-            const navLinks = document.querySelectorAll('.nav-link[href^="#"]:not(#logoutBtn)');
+            const navItems = document.querySelectorAll('.nav-item[href^="#"]');
             const sections = document.querySelectorAll('.content-section');
             const sectionTitle = document.getElementById('sectionTitle');
+            const chatContainer = document.getElementById('chatContainer');
+            const messagesSection = document.getElementById('messagesSection');
             
-            // Nav link click handler
-            navLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
+            // Nav item click handler
+            navItems.forEach(item => {
+                item.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                    // Remove active class from all links
-                    navLinks.forEach(l => l.classList.remove('active'));
+                    // Remove active class from all nav items
+                    navItems.forEach(i => i.classList.remove('active'));
                     
-                    // Add active class to clicked link
+                    // Add active class to clicked item
                     this.classList.add('active');
                     
-                    // Hide all sections
-                    sections.forEach(section => section.classList.remove('active'));
+                    // Hide all sections (including messagesSection)
+                    sections.forEach(section => {
+                        section.classList.remove('active');
+                    });
                     
-                    // Show selected section
+                    // Hide messages section and chat container by default
+                    if (messagesSection) {
+                        messagesSection.classList.remove('active');
+                        // Xóa class khỏi body
+                        document.body.classList.remove('messages-active');
+                    }
+                    if (chatContainer) {
+                        chatContainer.style.display = 'none';
+                    }
+                    
+                    // Get href
                     const href = this.getAttribute('href');
                     if (!href || href === '#' || href.length < 2) {
-                        console.warn('Nav link không có href hợp lệ:', this.id, href);
+                        console.warn('Nav item không có href hợp lệ:', this.id, href);
                         return;
                     }
                     
+                    // Special handling for Messages
+                    if (href === '#messages') {
+                        // Hide admin header when in messages section
+                        const adminHeader = document.getElementById('adminHeader');
+                        if (adminHeader) {
+                            adminHeader.style.display = 'none';
+                        }
+                        
+                        // Hide all other sections first
+                        sections.forEach(section => {
+                            if (section.id !== 'messagesSection') {
+                                section.classList.remove('active');
+                            }
+                        });
+                        
+                        // Show messages section and chat container
+                        const messagesSection = document.getElementById('messagesSection');
+                        if (messagesSection) {
+                            messagesSection.classList.add('active');
+                            // Thêm class vào body để CSS có thể target dễ dàng hơn
+                            document.body.classList.add('messages-active');
+                            
+                            // Debug: Kiểm tra và loại bỏ padding/margin trực tiếp
+                            const mainContent = document.querySelector('.main-content');
+                            const colElement = document.querySelector('.col.p-0:not(.col-auto)');
+                            const rowElement = document.querySelector('.row.g-0');
+                            const containerFluid = document.querySelector('.container-fluid.px-0');
+                            const contentWrapper = document.querySelector('.content-wrapper');
+                            
+                            // QUAN TRỌNG: Container-fluid không có padding
+                            if (containerFluid) {
+                                containerFluid.style.paddingLeft = '0';
+                                containerFluid.style.paddingRight = '0';
+                                containerFluid.style.padding = '0';
+                            }
+                            
+                            // QUAN TRỌNG: Row không có margin và gutter
+                            if (rowElement) {
+                                rowElement.style.marginLeft = '0';
+                                rowElement.style.marginRight = '0';
+                                rowElement.style.setProperty('--bs-gutter-x', '0', 'important');
+                                rowElement.style.setProperty('--bs-gutter-y', '0', 'important');
+                            }
+                            
+                            // QUAN TRỌNG: Col phải không có padding
+                            if (colElement) {
+                                colElement.style.padding = '0';
+                                colElement.style.paddingLeft = '0';
+                                colElement.style.paddingRight = '0';
+                                colElement.style.paddingTop = '0';
+                                colElement.style.paddingBottom = '0';
+                            }
+                            
+                            // QUAN TRỌNG: Main-content phải có margin-left: 280px và padding: 0
+                            // Sử dụng setProperty với important để override tất cả CSS
+                            if (mainContent) {
+                                mainContent.style.setProperty('padding', '0', 'important');
+                                mainContent.style.setProperty('padding-left', '0', 'important');
+                                mainContent.style.setProperty('padding-right', '0', 'important');
+                                mainContent.style.setProperty('padding-top', '0', 'important');
+                                mainContent.style.setProperty('padding-bottom', '0', 'important');
+                                mainContent.style.setProperty('margin-left', '280px', 'important');
+                                mainContent.style.setProperty('width', 'calc(100% - 280px)', 'important');
+                            }
+                            
+                            // QUAN TRỌNG: Content-wrapper không có padding
+                            if (contentWrapper) {
+                                contentWrapper.style.padding = '0';
+                                contentWrapper.style.paddingLeft = '0';
+                                contentWrapper.style.paddingRight = '0';
+                                contentWrapper.style.margin = '0';
+                                contentWrapper.style.marginLeft = '0';
+                                contentWrapper.style.marginRight = '0';
+                            }
+                            
+                            // QUAN TRỌNG: MessagesSection không có margin, bắt đầu từ cạnh trái của main-content
+                            if (messagesSection) {
+                                messagesSection.style.marginLeft = '0';
+                                messagesSection.style.marginRight = '0';
+                                messagesSection.style.marginTop = '0';
+                                messagesSection.style.marginBottom = '0';
+                                messagesSection.style.padding = '0';
+                                messagesSection.style.paddingLeft = '0';
+                                messagesSection.style.paddingRight = '0';
+                                messagesSection.style.width = '100%';
+                            }
+                            
+                            // Debug: Log để kiểm tra SAU KHI đã set
+                            setTimeout(() => {
+                                console.log('🔍 Debug messages section spacing (sau khi set):');
+                                if (mainContent) {
+                                    const computed = window.getComputedStyle(mainContent);
+                                    console.log('Main-content padding-left:', computed.paddingLeft);
+                                    console.log('Main-content margin-left:', computed.marginLeft);
+                                    if (parseFloat(computed.paddingLeft) > 0) {
+                                        console.warn('⚠️ WARNING: padding-left vẫn không phải 0! Đang thử lại...');
+                                        // Thử nhiều cách để override
+                                        mainContent.style.setProperty('padding-left', '0', 'important');
+                                        mainContent.style.paddingLeft = '0';
+                                        // Thử lại sau một chút
+                                        setTimeout(() => {
+                                            mainContent.style.setProperty('padding-left', '0', 'important');
+                                            mainContent.style.paddingLeft = '0';
+                                        }, 50);
+                                    }
+                                }
+                                if (colElement) {
+                                    const computed = window.getComputedStyle(colElement);
+                                    console.log('Col padding-left:', computed.paddingLeft);
+                                }
+                            }, 100);
+                            if (rowElement) {
+                                rowElement.style.marginLeft = '0';
+                                rowElement.style.marginRight = '0';
+                            }
+                            if (containerFluid) {
+                                containerFluid.style.paddingLeft = '0';
+                                containerFluid.style.paddingRight = '0';
+                            }
+                        }
+                        if (chatContainer) {
+                            chatContainer.style.display = 'flex';
+                        }
+                        
+                        // Load admin info for top header
+                        loadAdminInfoForMessages();
+                        return;
+                    }
+                    
+                    // Show admin header for other sections
+                    const adminHeader = document.getElementById('adminHeader');
+                    if (adminHeader) {
+                        adminHeader.style.display = 'block';
+                    }
+                    
+                    // Ensure messages section and chat container are hidden for other sections
+                    if (messagesSection) {
+                        messagesSection.classList.remove('active');
+                        // Xóa class khỏi body
+                        document.body.classList.remove('messages-active');
+                    }
+                    if (chatContainer) {
+                        chatContainer.style.display = 'none';
+                    }
+                    
+                    // Show selected section
                     const targetId = href.substring(1) + 'Section';
                     const targetSection = document.getElementById(targetId);
                     if (targetSection) {
@@ -1747,37 +2051,88 @@
                     
                     // Update section title
                     if (sectionTitle) {
-                        sectionTitle.textContent = this.textContent.trim();
+                        const spanText = this.querySelector('span:not(.nav-badge)');
+                        sectionTitle.textContent = spanText ? spanText.textContent.trim() : this.textContent.trim();
                     }
                     
-                    // Special case for cancel requests - redirect to dedicated page
-                    if (this.id === 'navCancelRequests') {
-                        window.location.href = 'admin/cancel-requests.html';
-                        return;
-                    }
-                    
-                    // Load ratings when ratings section is shown
+                    // Load data when sections are shown
                     if (this.id === 'navRatings' && typeof loadRatings === 'function') {
                         loadRatings();
                     }
                     
-                    // Load promotions when promotions section is shown
                     if (this.id === 'navPromotions' && window.promotionManager) {
                         window.promotionManager.loadPromotions();
                     }
+                    
+                    if ((this.id === 'navStatistics' || this.id === 'navDashboard') && typeof loadDashboard === 'function') {
+                        loadDashboard();
+                    }
                 });
             });
+            
+            // Load admin info for messages header
+            function loadAdminInfoForMessages() {
+                const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
+                if (user) {
+                    const adminEmailDisplay = document.getElementById('adminEmailDisplay');
+                    const adminAvatarSmall = document.getElementById('adminAvatarSmall');
+                    
+                    if (adminEmailDisplay) {
+                        adminEmailDisplay.textContent = user.email || user.ten_tai_khoan || 'admin@example.com';
+                    }
+                    
+                    if (adminAvatarSmall && user.anh_dai_dien) {
+                        const img = document.createElement('img');
+                        img.src = user.anh_dai_dien;
+                        img.alt = user.ten_hien_thi || 'Admin';
+                        adminAvatarSmall.innerHTML = '';
+                        adminAvatarSmall.appendChild(img);
+                    }
+                }
+            }
+            
+            // Load admin info on page load if messages section is active
+            if (document.getElementById('messagesSection')?.classList.contains('active')) {
+                loadAdminInfoForMessages();
+            }
         });
     </script>
-   <div class="admin-chat-container">
-    <!-- Sidebar: Danh sách người dùng -->
-    <div class="chat-sidebar">
-      <div class="chat-sidebar-header">
-        <h4><i class="fas fa-comments me-2"></i>Tin nhắn</h4>
-        <button class="btn-toggle-sidebar" id="toggleSidebar" title="Ẩn/Hiện danh sách">
-          <i class="fas fa-chevron-left"></i>
-        </button>
-      </div>
+   <!-- Messages Section - Chứa chat container -->
+   <div id="messagesSection" class="content-section">
+     <!-- Chat Container - Chỉ hiển thị khi chọn "Tin nhắn" -->
+     <div class="admin-chat-container" id="chatContainer" style="display: none;">
+       <!-- Top Header for Messages - Tích hợp vào chat container -->
+       <div class="messages-top-header">
+         <div class="messages-header-left">
+           <h3><i class="fas fa-comments me-2"></i>Tin nhắn</h3>
+         </div>
+         <div class="messages-header-right">
+           <button class="btn-notification" id="messagesNotificationBell" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+             <i class="fas fa-bell"></i>
+             <span class="notification-badge" id="messagesNotificationBadge" style="display: none;">0</span>
+           </button>
+           <span class="admin-email" id="adminEmailDisplay"></span>
+           <div class="admin-avatar-small" id="adminAvatarSmall">
+             <i class="fas fa-user"></i>
+           </div>
+         </div>
+       </div>
+       
+       <!-- Chat Content Wrapper -->
+       <div class="chat-content-wrapper">
+         <!-- Sidebar: Danh sách người dùng -->
+         <div class="chat-sidebar">
+           <div class="chat-sidebar-header">
+             <div class="sidebar-header-content">
+               <button class="btn-back-sidebar" id="backToSidebar" title="Quay lại" style="display: none;">
+                 <i class="fas fa-chevron-left"></i>
+               </button>
+               <h4><i class="fas fa-users me-2"></i>Danh sách người dùng</h4>
+             </div>
+             <button class="btn-toggle-sidebar" id="toggleSidebar" title="Ẩn/Hiện danh sách">
+               <i class="fas fa-chevron-left"></i>
+             </button>
+           </div>
       
       <!-- Tìm kiếm người dùng -->
       <div class="chat-search-box">
@@ -1801,6 +2156,11 @@
 
     <!-- Main: Khung chat -->
     <div class="chat-main">
+      <!-- Nút hiển thị lại sidebar khi bị ẩn -->
+      <button class="btn-show-sidebar" id="showSidebarBtn" title="Hiển thị danh sách" style="display: none;">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+      
       <!-- Header chat -->
       <div class="chat-header">
         <div class="chat-header-info">
@@ -1862,9 +2222,10 @@
           <button class="quick-reply-btn" data-reply="Cảm ơn bạn đã liên hệ!">Cảm ơn bạn đã liên hệ!</button>
           <button class="quick-reply-btn" data-reply="Vui lòng đợi một chút, tôi đang kiểm tra...">Vui lòng đợi một chút...</button>
         </div>
-      </div>
-    </div>
-  </div>
+         </div>
+       </div>
+     </div>
+   </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/chat-admin.js"></script>
