@@ -16,6 +16,10 @@ const logRequestBody = (req, res, next) => {
 
 // GET all tours
 router.get('/', tourController.getAllTours);
+// GET hot tours (most booked)
+router.get('/hot', tourController.getHotTours);
+// GET sale tours (admin discount)
+router.get('/sale', tourController.getSaleTours);
 
 // GET all tours directly from database (admin only)
 router.get('/database/all', authMiddleware.authenticateToken, authMiddleware.isAdmin, tourController.getAllToursFromDatabase);

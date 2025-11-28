@@ -6,297 +6,873 @@
     <title>Tất cả tour - D-Travel</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
-    <link href="css/alltours.css" rel="stylesheet">
+    <!-- <link href="css/alltours.css" rel="stylesheet"> -->
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #764ba2;
+            --secondary: #f5576c;
+            --light: #f8f9fa;
+            --dark: #2d3436;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--light);
+            overflow-x: hidden;
+        }
+        .navbar {
+            background: rgba(255, 255, 255, 0.1) !important;
+            backdrop-filter: blur(8px);
+            box-shadow: none !important;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1030;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white !important;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .nav-link {
+            position: relative;
+            font-weight: 500;
+            margin: 0 15px;
+            color: white !important;
+            transition: all 0.3s ease;
+            padding: 8px 0 !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: white;
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover {
+            color: #ffd700 !important;
+            transform: translateY(-2px);
+        }
+        .nav-link:hover::after {
+            width: 100%;
+            background: #ffd700;
+        }
+ .search-section {
+    background: url('/images/uploads/tours/hero-banner.jpg.png') center/contain no-repeat;
+    background-attachment: fixed;
+    background-color: #f0f0f0;
+    padding: 0;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    height: 65vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0;
+    background-size: cover;
+}
+
+
+
+        .search-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%);
+            z-index: 1;
+        }
+        .search-section .container {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+        .search-section h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 2rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        .search-box {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        .search-box input,
+        .search-box select {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+        .search-box input {
+            flex: 1;
+            min-width: 250px;
+            background: white;
+            color: var(--dark);
+        }
+        .search-box input::placeholder {
+            color: #999;
+        }
+        .search-box select {
+            background: white;
+            color: var(--dark);
+            cursor: pointer;
+            min-width: 200px;
+        }
+        .search-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        }
+        .search-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+        }
+        .card-style-5 {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            height: 520px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .card-style-5:hover {
+            transform: translateY(-20px) scale(1.02);
+            box-shadow: 0 30px 80px rgba(102, 126, 234, 0.5), 0 0 60px rgba(245, 87, 108, 0.2);
+        }
+        .card-style-5 .card-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            overflow: hidden;
+        }
+        .card-style-5 .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+        .card-style-5:hover .card-image img {
+            transform: scale(1.1);
+        }
+        .card-style-5 .card-image::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, 
+                transparent 0%, 
+                rgba(0,0,0,0.1) 30%,
+                rgba(102, 126, 234, 0.1) 60%, 
+                rgba(0,0,0,0.9) 100%);
+            z-index: 2;
+        }
+        .card-style-5 .card-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, var(--secondary) 0%, #f5576c 100%);
+            color: white;
+            padding: 10px 22px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            z-index: 5;
+            box-shadow: 0 8px 25px rgba(245, 87, 108, 0.4);
+            animation: badgeBounce 2s infinite;
+            letter-spacing: 0.5px;
+        }
+        .card-style-5 .card-badge.sale {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            box-shadow: 0 8px 25px rgba(251, 191, 36, 0.4);
+        }
+        @keyframes badgeBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .card-style-5 .favorite-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid white;
+            cursor: pointer;
+            z-index: 5;
+            transition: all 0.3s ease;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+        .card-style-5 .favorite-btn:hover {
+            background: white;
+            transform: scale(1.15) rotate(10deg);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+        .card-style-5 .favorite-btn.active {
+            color: var(--secondary);
+            animation: heartPulse 0.6s ease;
+        }
+        @keyframes heartPulse {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.3); }
+            50% { transform: scale(1.15); }
+            75% { transform: scale(1.25); }
+            100% { transform: scale(1.1); }
+        }
+        .card-style-5 .card-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            color: white;
+            z-index: 4;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            height: auto;
+            max-height: 100%;
+            overflow: hidden;
+        }
+        .card-style-5 .card-title {
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            line-height: 1.3;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            letter-spacing: -0.5px;
+        }
+        .card-style-5 .info-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        .card-style-5 .info-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .card-style-5 .info-item i {
+            color: #fbbf24;
+            font-size: 1rem;
+        }
+        .card-style-5 .card-rating {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding: 8px 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            width: fit-content;
+        }
+        .card-style-5 .rating-number {
+            color: #fbbf24;
+            font-weight: 800;
+            font-size: 1.05rem;
+            min-width: 35px;
+        }
+        .card-style-5 .rating-stars {
+            color: #fbbf24;
+            font-size: 0.85rem;
+            min-width: 80px;
+        }
+        .card-style-5 .rating-count {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+        .card-style-5 .card-footer {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            border: none;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .card-style-5 .price-table {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(5px);
+        }
+        .card-style-5 .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+        .card-style-5 .price-row:last-child {
+            margin-bottom: 0;
+        }
+        .card-style-5 .price-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+        }
+        .card-style-5 .price-value {
+            color: #fbbf24;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        .card-style-5 .btn-book {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+            flex: 1;
+            text-align: center;
+        }
+        .card-style-5 .btn-book:hover {
+            transform: translateX(5px) scale(1.05);
+            box-shadow: 0 10px 35px rgba(102, 126, 234, 0.5);
+            color: white;
+        }
+        .filter-section {
+            background: white;
+            padding: 12px 0;
+            position: sticky;
+            top:65px;
+            z-index: 999;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            border-bottom: 2px solid #f0f0f0;
+            
+        }
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .filter-btn {
+            background: white;
+            border: 2px solid #e0e0e0;
+            padding: 10px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: var(--dark);
+            white-space: nowrap;
+        }
+        .filter-btn:hover, .filter-btn.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        .sort-select {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 50px;
+            background: white;
+            color: var(--dark);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .sort-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+        }
+        .search-section {
+            background: url('/images/uploads/tours/hero-banner.jpg.png.png') center/cover no-repeat fixed;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            height: 65vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0;
+        }
+        .search-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%);
+            z-index: 1;
+        }
+
+        .search-section .container {
+            position: relative;
+            z-index: 2;
+        }
+        .search-section h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 3rem;
+            font-weight: 800;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            letter-spacing: -1px;
+            position: relative;
+            z-index: 2;
+        }
+        .search-box {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        .search-box input, .search-box select {
+            flex: 1;
+            min-width: 180px;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 50px;
+            background: white;
+            color: var(--dark);
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .search-box input::placeholder {
+            color: #999;
+        }
+        .search-box input:focus, .search-box select:focus {
+            outline: none;
+            background: white;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+        .search-btn {
+            background: white;
+            color: var(--primary);
+            border: none;
+            padding: 14px 45px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            white-space: nowrap;
+        }
+        .search-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 35px rgba(0,0,0,0.15);
+            color: var(--primary-dark);
+        }
+        .loading-container {
+            text-align: center;
+            padding: 3rem;
+        }
+        .spinner {
+            border: 4px solid rgba(102, 126, 234, 0.1);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+        }
+        .empty-state i {
+            font-size: 3rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+        @media (max-width: 768px) {
+            .search-section h1 { font-size: 2rem; margin-bottom: 1.5rem; }
+            .search-box { flex-direction: column; }
+            .search-box input, .search-box select, .search-btn { width: 100%; }
+            .card-style-5 { height: 450px; }
+            .card-style-5 .card-title { font-size: 1.15rem; }
+            .card-style-5 .card-content { padding: 18px; }
+            .card-style-5 .info-row { gap: 10px; padding: 8px; }
+            .card-style-5 .info-item { font-size: 0.85rem; }
+            .filter-controls { flex-direction: column; align-items: stretch; }
+            .filter-btn, .sort-select { width: 100%; text-align: center; }
+        }
+        .tours-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        @media (min-width: 992px) {
+            .tours-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body>
-    <!-- Modern Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
-      <div class="container">
-        <!-- Logo D-Travel với chữ D trong vòng tròn -->
-        <a class="navbar-brand" href="/">
-          <div class="logo-circle">D</div>
-          <span class="brand-text">D-Travel</span>
-        </a>
-        
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <!-- Menu chính ở giữa -->
-          <ul class="navbar-nav mx-auto">
-            <li class="nav-item">
-              <a class="nav-link" href="index.html">Trang chủ</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="alltour.html">Tours</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="index.html#destinations">Điểm đến</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="index.html#about">Giới thiệu</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="index.html#contact">Liên hệ</a>
-            </li>
-          </ul>
-          
-          <!-- Góc phải - Auth buttons hoặc User menu -->
-          <div class="d-flex align-items-center gap-3" id="authButtons">
-            <a href="/auth.html" class="btn btn-outline-primary btn-sm">
-              <i class="fas fa-sign-in-alt me-1"></i> Đăng nhập
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <div class="logo-circle" style="width: 45px; height: 45px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; margin-right: 10px;">D</div>
+                <span>D-Travel</span>
             </a>
-            <a href="/auth.html" class="btn btn-primary btn-sm">
-              <i class="fas fa-user-plus me-1"></i> Đăng ký
-            </a>
-          </div>
-          
-          <div class="d-flex align-items-center gap-3 d-none" id="userMenu">
-            <span class="welcome-text d-flex align-items-center">
-              <i class="fas fa-user-check me-1" id="userIcon"></i>
-              <img id="userAvatar" src="" alt="" class="user-avatar me-2 d-none" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #667eea;">
-              Chào mừng, <strong id="userName" class="ms-1">Người dùng</strong>!
-            </span>
-            <div class="dropdown">
-              <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                <i class="fas fa-user-circle me-1"></i> Tài khoản
-              </button>
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="/profile.html"><i class="fas fa-id-card me-2"></i> Thông tin cá nhân</a></li>
-                <li><a class="dropdown-item" href="/my-bookings.html"><i class="fas fa-history me-2"></i> Lịch sử đặt tour</a></li>
-                <li><a class="dropdown-item" href="/rate-tour.html"><i class="fas fa-star me-2"></i> Đánh giá của tôi</a></li>
-              </ul>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Trang chủ</a></li>
+                    <li class="nav-item"><a class="nav-link" href="alltour.html">Tours</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html#destinations">Điểm đến</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html#about">Giới thiệu</a></li>
+                </ul>
             </div>
-            <button class="btn btn-outline-danger btn-sm" id="logoutBtn">
-              <i class="fas fa-sign-out-alt me-1"></i> Đăng xuất
-            </button>
-          </div>
         </div>
-      </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero-banner hero-parallax position-relative">
-        <div class="parallax-container">
-            <div class="contents">
-                <!-- Layer 0: Background xa nhất -->
-                <img src="images/uploads/tourshome/layer-0.jfif" class="img-layer layer-0" onerror="this.style.display='none'">
-                <!-- Cloud: Mây trôi -->
-                <img src="images/uploads/tourshome/clouds.png" class="cloud" alt="clouds" onerror="this.style.display='none'">
-                <!-- Bird small: Chim nhỏ bay ngang -->
-                <img src="images/uploads/tourshome/bird-small.gif" class="bird1" alt="bird" onerror="this.style.display='none'">
-                <!-- Layer 1: Middle ground -->
-                <img src="images/uploads/tourshome/layer1.png" class="img-layer layer-1" onerror="this.style.display='none'">
-                <!-- Layer 2: Foreground -->
-                <img src="images/uploads/tourshome/layer2.png" class="img-layer layer-2" onerror="this.style.display='none'">
-                <!-- Layer 3: Foreground - animation zoom -->
-                <img src="images/uploads/tourshome/layer3.png" class="img-layer layer-3" onerror="this.style.display='none'">
-                <!-- Bird large: Chim lớn bay vào -->
-                <img src="images/uploads/tourshome/bird-large.gif" class="bird" alt="bird" onerror="this.style.display='none'">
+    <div class="search-section">
+        <div class="container">
+            <h1>Khám Phá Tours Du Lịch</h1>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Tìm tour, điểm đến...">
+                <select id="tourTypeFilter">
+                    <option value="">Tất cả loại tour</option>
+                    <option value="trong_nuoc">Trong nước</option>
+                    <option value="nuoc_ngoai">Nước ngoài</option>
+                </select>
+                <button class="search-btn" onclick="searchTours()"><i class="fas fa-search me-2"></i>Tìm kiếm</button>
             </div>
-            <div class="hero-content container">
-                <h1 class="display-4 fw-bold mb-4 text-center text-shadow-2">Khám phá tất cả tour cùng D-Travel</h1>
-                
-                <!-- Search and Filter Section trong Hero -->
-                <div class="hero-search-section">
-                    <div class="row g-3 align-items-end">
-                        <!-- Search Input -->
-                        <div class="col-lg-5 col-md-12">
-                            <input type="text" id="heroSearchInput" class="form-control hero-search-input" placeholder="Tìm kiếm tên tour...">
-                        </div>
-                        
-                        <!-- Filter Button - Loại tour -->
-                        <div class="col-lg-3 col-md-6">
-                            <button class="btn hero-filter-btn w-100" id="heroTourTypeBtn">
-                                <i class="fas fa-filter me-2"></i>Loại tour
-                            </button>
-                        </div>
-                        
-                        <!-- Search Button -->
-                        <div class="col-lg-4 col-md-6">
-                            <div class="hero-search-button-wrapper">
-                                <input type="text" class="form-control hero-search-bar-input" placeholder="Search" readonly>
-                                <button class="btn hero-search-btn" id="heroSearchBtn">
-                                    <i class="fas fa-search"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Hidden Tour Type Dropdown -->
-                    <div class="hero-tour-type-dropdown" id="heroTourTypeDropdown" style="display: none;">
-                        <select id="heroTourTypeFilter" class="form-select">
-                            <option value="">Tất cả</option>
-                            <option value="trong_nuoc">Trong nước</option>
-                            <option value="nuoc_ngoai">Nước ngoài</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="scroll-indicator">
-                <i class="fas fa-chevron-down fa-bounce fa-2x text-white-50"></i>
-            </div>
-        </div>
-    </section>
-
-    <!-- Main Content -->
-    <div class="container mt-5 mb-5">
-        <!-- Filter and Sort Bar -->
-        <div class="filter-sort-bar mb-4">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                <div class="d-flex align-items-center gap-3">
-                    <button class="btn-filter-sort" id="filterBtn">
-                        <i class="fas fa-filter me-2"></i>Bộ lọc
-                    </button>
-                    <div class="sort-dropdown-wrapper">
-                        <button class="btn-filter-sort" id="sortBtn">
-                            <i class="fas fa-sort me-2"></i><span id="sortBtnText">Sắp xếp theo...</span>
-                            <i class="fas fa-chevron-down ms-2" style="font-size: 0.8rem;"></i>
-                        </button>
-                        <div class="sort-dropdown-menu" id="sortDropdown" style="display: none;">
-                            <a href="#" class="sort-option" data-sort="default">
-                                <i class="fas fa-sort me-2"></i>Mặc định
-                            </a>
-                            <a href="#" class="sort-option" data-sort="price-asc">
-                                <i class="fas fa-sort-amount-up me-2"></i>Giá tăng dần
-                            </a>
-                            <a href="#" class="sort-option" data-sort="price-desc">
-                                <i class="fas fa-sort-amount-down me-2"></i>Giá giảm dần
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Hidden Search Inputs (for compatibility with existing JS) -->
-        <input type="text" id="searchInput" class="d-none" placeholder="Tìm kiếm tên tour...">
-        <select id="tourTypeFilter" class="d-none">
-            <option value="">Tất cả</option>
-            <option value="trong_nuoc">Trong nước</option>
-            <option value="nuoc_ngoai">Nước ngoài</option>
-        </select>
-
-        <!-- Loading Spinner -->
-        <div id="loadingSpinner" class="text-center d-none mb-4">
-            <div class="spinner-border text-accent" role="status">
-                <span class="visually-hidden">Đang tải...</span>
-            </div>
-        </div>
-
-        <!-- Tours Container -->
-        <div class="row g-4" id="toursContainer">
-            <!-- Example Tour Card (dynamically loaded by JS) -->
-            <div class="col-lg-4 col-md-6">
-                <div class="card card-box">
-                    <div class="skeleton-loader" style="height: 200px;"></div>
-                    <div class="card-body">
-                        <h5 class="card-title skeleton-loader" style="height: 24px; width: 70%;"></h5>
-                        <p class="card-text skeleton-loader" style="height: 16px; width: 90%;"></p>
-                        <p class="card-text skeleton-loader" style="height: 16px; width: 60%;"></p>
-                    </div>
-                </div>
-            </div>
-            <!-- More tour cards will be loaded here -->
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="footer">
+    <div class="filter-section">
+        <div class="container">
+            <div class="filter-controls">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="filter-btn active" id="filterAllBtn" onclick="filterTours('all')"><i class="fas fa-list me-2"></i>Tất cả</button>
+                    <button class="filter-btn" id="filterHotBtn" onclick="filterTours('hot')"><i class="fas fa-fire me-2"></i>Hot</button>
+                    <button class="filter-btn" id="filterSaleBtn" onclick="filterTours('sale')"><i class="fas fa-tags me-2"></i>Giảm giá</button>
+                    <button class="filter-btn" id="filterDomesticBtn" onclick="filterTours('domestic')"><i class="fas fa-map-marked-alt me-2"></i>Trong nước</button>
+                    <button class="filter-btn" id="filterIntlBtn" onclick="filterTours('international')"><i class="fas fa-globe me-2"></i>Nước ngoài</button>
+                </div>
+                <select class="sort-select" id="sortSelect" onchange="sortTours(this.value)">
+                    <option value="">Sắp xếp theo...</option>
+                    <option value="price-asc">Giá: Thấp → Cao</option>
+                    <option value="price-desc">Giá: Cao → Thấp</option>
+                    <option value="rating">Đánh giá cao</option>
+                    <option value="newest">Mới nhất</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="container py-5">
+        <div id="loadingIndicator" class="loading-container" style="display: none;"><div class="spinner"></div><p class="mt-3">Đang tải tour...</p></div>
+        <div id="toursContainer" class="tours-grid"></div>
+        <div id="emptyState" class="empty-state" style="display: none;"><i class="fas fa-inbox"></i><h3>Không tìm thấy tour nào</h3><p>Vui lòng thử lại với tiêu chí tìm kiếm khác</p></div>
+    </div>
+
+    <footer class="bg-dark text-white py-5">
         <div class="container">
             <div class="row">
-                <div class="col-md-4 mb-4">
-                    <h5 class="text-warning">D-Travel</h5>
-                    <p>Khám phá thế giới với những hành trình tuyệt vời cùng D-Travel. Chúng tôi mang đến những trải nghiệm du lịch đáng nhớ với dịch vụ chất lượng cao.</p>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <h5>Liên kết nhanh</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="index.html" class="text-white text-decoration-none footer-link">Trang chủ</a></li>
-                        <li><a href="index.html#about" class="text-white text-decoration-none footer-link">Giới thiệu</a></li>
-                        <li><a href="index.html#contact" class="text-white text-decoration-none footer-link">Liên hệ</a></li>
-                        <li><a href="alltour.html" class="text-white text-decoration-none footer-link">Tất cả tour</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <h5>Liên hệ</h5>
-                    <p><i class="fas fa-envelope me-2"></i>support@dtravel.com</p>
-                    <p><i class="fas fa-phone me-2"></i>+84 123 456 789</p>
-                    <p><i class="fas fa-map-marker-alt me-2"></i>123 Đường ABC, Quận XYZ, TP.HCM</p>
-                    <div class="social-icons mt-3">
-                        <a href="#" class="text-white me-2"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="text-white me-2"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="text-white me-2"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-youtube"></i></a>
-                    </div>
-                </div>
+                <div class="col-md-4 mb-4"><h5 class="text-warning">D-Travel</h5><p>Khám phá thế giới với những hành trình tuyệt vời cùng D-Travel.</p></div>
+                <div class="col-md-4 mb-4"><h5>Liên kết nhanh</h5><ul class="list-unstyled"><li><a href="index.html" class="text-white text-decoration-none">Trang chủ</a></li><li><a href="index.html#about" class="text-white text-decoration-none">Giới thiệu</a></li><li><a href="alltour.html" class="text-white text-decoration-none">Tất cả tour</a></li></ul></div>
+                <div class="col-md-4 mb-4"><h5>Liên hệ</h5><p><i class="fas fa-envelope me-2"></i>support@dtravel.com</p><p><i class="fas fa-phone me-2"></i>+84 123 456 789</p></div>
             </div>
             <hr class="bg-light">
-            <div class="text-center text-white-50">
-                <p class="mb-0">© 2025 D-Travel. All rights reserved.</p>
-            </div>
+            <div class="text-center"><p>© 2025 D-Travel. Tất cả quyền được bảo lưu.</p></div>
         </div>
     </footer>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/config.js"></script>
     <script src="js/navbar.js"></script>
-    <script src="js/client/alltour.js"></script>
     <script>
-    // Xử lý lỗi runtime.lastError từ browser extensions
-    window.addEventListener('error', function(e) {
-        if (e && e.message && (
-            e.message.indexOf('runtime.lastError') > -1 ||
-            e.message.indexOf('Could not establish connection') > -1 ||
-            e.message.indexOf('Receiving end does not exist') > -1
-        )) {
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            return false;
+        let allTours = [], filteredTours = [], currentFilter = 'all', currentSort = '';
+        document.addEventListener('DOMContentLoaded', () => { loadTours(); setupEventListeners(); });
+        function setupEventListeners() {
+            document.getElementById('searchInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') searchTours(); });
         }
-    }, true);
-
-    window.addEventListener('unhandledrejection', function(e) {
-        if (e && e.reason && e.reason.message && (
-            e.reason.message.indexOf('runtime.lastError') > -1 ||
-            e.reason.message.indexOf('Could not establish connection') > -1 ||
-            e.reason.message.indexOf('Receiving end does not exist') > -1
-        )) {
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            return false;
+        async function loadTours() {
+            showLoading(true);
+            try {
+                console.log('API_BASE_URL:', CONFIG.API_BASE_URL);
+                const url = `${CONFIG.API_BASE_URL}/tours?limit=30`;
+                console.log('Fetching:', url);
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                console.log('Data received:', data);
+                if (data.status === 'success') {
+                    allTours = data.data.tours || [];
+                    console.log('Tours loaded:', allTours.length);
+                    filterTours('all');
+                } else {
+                    console.error('API returned error status');
+                    showEmpty();
+                }
+            } catch (error) {
+                console.error('Lỗi tải tour:', error);
+                showEmpty();
+            } finally {
+                showLoading(false);
+            }
         }
-    });
-
-    // Parallax effect
-    (function(){
-        const parallax = document.querySelector('.contents');
-        const layer1 = document.querySelector('.layer-1');
-        const layer2 = document.querySelector('.layer-2');
-        
-        if (!parallax || !layer1 || !layer2) return;
-        
-        const halfWidth = window.innerWidth / 2;
-        const halfHeight = window.innerHeight / 2;
-        
-        parallax.addEventListener('mousemove', function(e) {
-            const rateX = e.clientX / halfWidth - 1;
-            const rateY = e.clientY / halfHeight - 1;
-            
-            layer1.style.transform = `translate(${rateX * 10}px, ${rateY * 20}px)`;
-            layer2.style.transform = `translate(${rateX * 10}px, ${rateY * 20}px)`;
-        });
-    })();
+        function searchTours() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const tourType = document.getElementById('tourTypeFilter').value;
+            filteredTours = allTours.filter(tour => {
+                const matchSearch = !searchTerm || tour.Ten_tour?.toLowerCase().includes(searchTerm) || tour.Diem_den?.toLowerCase().includes(searchTerm);
+                const matchType = !tourType || tour.Loai_tour === tourType;
+                return matchSearch && matchType;
+            });
+            if (currentSort) sortTours(currentSort);
+            renderTours();
+        }
+        function filterTours(type) {
+            currentFilter = type;
+            updateFilterButtons(type);
+            switch(type) {
+                case 'hot':
+                    filteredTours = allTours.filter(t => t.booking_count > 0);
+                    break;
+                case 'sale':
+                    filteredTours = allTours.filter(t => t.Gia_tri_khuyen_mai && parseFloat(t.Gia_tri_khuyen_mai) > 0);
+                    break;
+                case 'domestic':
+                    filteredTours = allTours.filter(t => t.Loai_tour === 'trong_nuoc');
+                    break;
+                case 'international':
+                    filteredTours = allTours.filter(t => t.Loai_tour === 'nuoc_ngoai');
+                    break;
+                default:
+                    filteredTours = [...allTours];
+            }
+            if (currentSort) sortTours(currentSort);
+            renderTours();
+        }
+        function sortTours(type) {
+            currentSort = type;
+            switch(type) {
+                case 'price-asc':
+                    filteredTours.sort((a, b) => (a.Gia_nguoi_lon || 0) - (b.Gia_nguoi_lon || 0));
+                    break;
+                case 'price-desc':
+                    filteredTours.sort((a, b) => (b.Gia_nguoi_lon || 0) - (a.Gia_nguoi_lon || 0));
+                    break;
+                case 'rating':
+                    filteredTours.sort((a, b) => {
+                        const ratingA = parseFloat(a.Diem_danh_gia_trung_binh) || 0;
+                        const ratingB = parseFloat(b.Diem_danh_gia_trung_binh) || 0;
+                        return ratingB - ratingA;
+                    });
+                    break;
+                case 'newest':
+                    filteredTours.reverse();
+                    break;
+            }
+            renderTours();
+        }
+        function renderTours() {
+            const container = document.getElementById('toursContainer');
+            container.innerHTML = '';
+            if (filteredTours.length === 0) {
+                showEmpty();
+                return;
+            }
+            filteredTours.forEach((tour, index) => {
+                const card = createTourCard(tour, index);
+                container.appendChild(card);
+            });
+            initFavoriteBtns();
+        }
+        function createTourCard(tour, index) {
+            const div = document.createElement('div');
+            div.style.animation = `fadeInUp 0.6s ease ${index * 0.1}s backwards`;
+            const imageUrl = getImageUrl(tour.Hinh_anh);
+            console.log(`Tour: ${tour.Ten_tour}, Hinh_anh: ${tour.Hinh_anh}, URL: ${imageUrl}`);
+            const price = tour.Gia_nguoi_lon ? tour.Gia_nguoi_lon.toLocaleString('vi-VN') : '0';
+            const priceChild = tour.Gia_tre_em ? tour.Gia_tre_em.toLocaleString('vi-VN') : '0';
+            const ratingValue = tour.Diem_danh_gia_trung_binh ? parseFloat(tour.Diem_danh_gia_trung_binh) : 5.0;
+            const rating = isNaN(ratingValue) ? '5.0' : ratingValue.toFixed(1);
+            const reviews = tour.So_luong_danh_gia || 0;
+            const isFav = isFavorite(tour.Ma_tour);
+            const isHot = tour.booking_count && parseFloat(tour.booking_count) > 0;
+            const isSale = tour.Gia_tri_khuyen_mai && parseFloat(tour.Gia_tri_khuyen_mai) > 0;
+            const duration = tour.Thoi_gian ? `${tour.Thoi_gian} ngày` : 'Liên hệ';
+            const discount = isSale ? Math.round(parseFloat(tour.Gia_tri_khuyen_mai)) : 0;
+            div.innerHTML = `
+                <div class="card-style-5">
+                    <div class="card-image"><img src="${imageUrl}" alt="${tour.Ten_tour}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22500%22%3E%3Crect fill=%22%23e0e0e0%22 width=%22400%22 height=%22500%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2218%22 font-family=%22Arial%22%3EImage Error%3C/text%3E%3C/svg%3E'"></div>
+                    ${isHot ? '<div class="card-badge"><i class="fas fa-fire me-1"></i>HOT</div>' : ''}
+                    ${isSale ? `<div class="card-badge sale"><i class="fas fa-tag me-1"></i>Giảm ${discount}%</div>` : ''}
+                    <button class="favorite-btn ${isFav ? 'active' : ''}" data-tour-id="${tour.Ma_tour}"><i class="fas fa-heart"></i></button>
+                    <div class="card-content">
+                        <h3 class="card-title">${tour.Ten_tour}</h3>
+                        <div class="info-row">
+                            <div class="info-item"><i class="fas fa-map-marker-alt"></i><span>${tour.Diem_den || 'N/A'}</span></div>
+                            <div class="info-item"><i class="fas fa-calendar-alt"></i><span>${duration}</span></div>
+                            <div class="info-item"><i class="fas fa-users"></i><span>${tour.So_cho_con_lai || 0} chỗ</span></div>
+                        </div>
+                        <div class="card-rating">
+                            <span class="rating-number">${rating}</span>
+                            <span class="rating-stars">${generateStars(parseFloat(rating))}</span>
+                            <span class="rating-count">(${reviews})</span>
+                        </div>
+                        <div class="price-table">
+                            <div class="price-row">
+                                <span class="price-label">Người lớn:</span>
+                                <span class="price-value">${price}đ</span>
+                            </div>
+                            <div class="price-row">
+                                <span class="price-label">Trẻ em:</span>
+                                <span class="price-value">${priceChild}đ</span>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <button class="btn-book" onclick="bookTour('${tour.Ma_tour}')">Đặt ngay <i class="fas fa-arrow-right ms-1"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return div;
+        }
+        function generateStars(rating) {
+            let stars = '';
+            const ratingNum = parseFloat(rating) || 5.0;
+            for (let i = 0; i < 5; i++) {
+                if (i < Math.floor(ratingNum)) stars += '<i class="fas fa-star"></i>';
+                else if (i < ratingNum && ratingNum % 1 >= 0.5) stars += '<i class="fas fa-star-half-alt"></i>';
+                else stars += '<i class="far fa-star"></i>';
+            }
+            return stars;
+        }
+        function getImageUrl(hinh_anh) {
+            if (!hinh_anh) return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="500"%3E%3Crect fill="%23e0e0e0" width="400" height="500"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-size="18" font-family="Arial"%3ENo Image%3C/text%3E%3C/svg%3E';
+            if (hinh_anh.startsWith('http')) return hinh_anh;
+            // Handle paths like 'uploads/tours/...'
+            if (hinh_anh.includes('uploads')) {
+                return `${CONFIG.IMAGE_URL}/${hinh_anh}`;
+            }
+            // If already has /images/, just prepend base URL
+            if (hinh_anh.includes('/images/')) {
+                return `${CONFIG.IMAGE_URL}${hinh_anh.substring(hinh_anh.indexOf('/images/'))}`;
+            }
+            // Default: prepend /images
+            return `${CONFIG.IMAGE_URL}/${hinh_anh}`;
+        }
+        function isFavorite(tourId) {
+            const favs = JSON.parse(localStorage.getItem('favoriteTours') || '[]');
+            return favs.includes(String(tourId));
+        }
+        function toggleFavorite(e) {
+            if (e && typeof e.preventDefault === 'function') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            const btn = (e && e.target) ? e.target.closest('.favorite-btn') : this.closest ? this.closest('.favorite-btn') : null;
+            if (!btn) return;
+            const tourId = btn.dataset.tourId;
+            let favs = JSON.parse(localStorage.getItem('favoriteTours') || '[]');
+            if (favs.includes(String(tourId))) {
+                favs = favs.filter(id => id !== String(tourId));
+                btn.classList.remove('active');
+            } else {
+                favs.push(String(tourId));
+                btn.classList.add('active');
+            }
+            localStorage.setItem('favoriteTours', JSON.stringify(favs));
+        }
+        function initFavoriteBtns() {
+            document.querySelectorAll('.favorite-btn').forEach(btn => {
+                btn.addEventListener('click', toggleFavorite);
+            });
+        }
+        function bookTour(tourId) {
+            window.location.href = `detailtour.html?tour=${tourId}`;
+        }
+        function updateFilterButtons(type) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            switch(type) {
+                case 'hot': document.getElementById('filterHotBtn').classList.add('active'); break;
+                case 'sale': document.getElementById('filterSaleBtn').classList.add('active'); break;
+                case 'domestic': document.getElementById('filterDomesticBtn').classList.add('active'); break;
+                case 'international': document.getElementById('filterIntlBtn').classList.add('active'); break;
+                default: document.getElementById('filterAllBtn').classList.add('active');
+            }
+        }
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+        }
+        function showEmpty() {
+            document.getElementById('toursContainer').innerHTML = '';
+            document.getElementById('emptyState').style.display = 'block';
+        }
     </script>
-    <!-- Chatbox CSS -->
-    <link rel="stylesheet" href="css/chatbox.css">
-    <!-- Chatbox JS -->
-    <script src="js/chatbox.js"></script>
 </body>
 </html>

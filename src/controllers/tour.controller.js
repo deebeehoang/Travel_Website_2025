@@ -9,6 +9,64 @@ const fs = require('fs');
  * Tour Controller
  */
 class TourController {
+    /**
+     * Get hot tours (most booked)
+     */
+    static async getHotTours(req, res) {
+      try {
+        // Lấy 6 tour có số lượng booking thành công nhiều nhất, giảm dần
+        const [rows] = await pool.query(`
+          SELECT t.*, COUNT(b.Ma_booking) AS booking_count
+          FROM Tour_du_lich t
+          LEFT JOIN Lich_khoi_hanh lkh ON t.Ma_tour = lkh.Ma_tour
+          LEFT JOIN Chi_tiet_booking cb ON lkh.Ma_lich = cb.Ma_lich
+          LEFT JOIN Booking b ON cb.Ma_booking = b.Ma_booking AND b.Trang_thai_booking = 'Đã thanh toán'
+          WHERE t.Tinh_trang = 'Còn chỗ'
+          GROUP BY t.Ma_tour
+          ORDER BY booking_count DESC
+          LIMIT 6
+        `);
+        res.status(200).json({
+          status: 'success',
+          results: rows.length,
+          data: { tours: rows },
+          pagination: { currentPage: 1, perPage: 6, hasMore: false }
+        });
+      } catch (error) {
+        console.error('getHotTours error:', error);
+        res.status(500).json({ status: 'error', message: 'Lỗi khi lấy tour hot', error: error.message });
+      }
+    }
+
+    /**
+     * Get sale tours (admin discount)
+     */
+    static async getSaleTours(req, res) {
+      try {
+        const { limit = 12, page = 1 } = req.query;
+        const perPage = parseInt(limit);
+        const offset = (parseInt(page) - 1) * perPage;
+        // Query tours with discount
+        // Chỉ trả về các tour còn chỗ có mã khuyến mãi, join với Khuyen_mai để lấy giá trị giảm giá
+        const [rows] = await pool.query(`
+          SELECT t.*, km.Ma_km AS Ma_khuyen_mai, km.Gia_tri AS Gia_tri_khuyen_mai
+          FROM Tour_du_lich t
+          JOIN Khuyen_mai km ON t.Ma_tour = km.Ma_km
+          WHERE t.Tinh_trang = 'Còn chỗ'
+          ORDER BY t.Gia_nguoi_lon ASC
+          LIMIT 6
+        `);
+        res.status(200).json({
+          status: 'success',
+          results: rows.length,
+          data: { tours: rows },
+          pagination: { currentPage: parseInt(page), perPage, hasMore: rows.length === perPage }
+        });
+      } catch (error) {
+        console.error('getSaleTours error:', error);
+        res.status(500).json({ status: 'error', message: 'Lỗi khi lấy tour giảm giá', error: error.message });
+      }
+    }
   /**
    * Get all tours
    * @param {Object} req - Express request object
@@ -46,10 +104,16 @@ static async getAllTours(req, res) {
 
     let sql = `
       SELECT t.*, d.Mo_ta,
-             ${ratingFields.join(',\n             ')}
+             ${ratingFields.join(',\n             ')},
+             COUNT(DISTINCT b.Ma_booking) AS booking_count,
+             MAX(km.Gia_tri) AS Gia_tri_khuyen_mai
       FROM Tour_du_lich t
       LEFT JOIN Chi_tiet_tour_dia_danh ctd ON t.Ma_tour = ctd.Ma_tour AND ctd.Thu_tu = 1
       LEFT JOIN Dia_danh d ON ctd.Ma_dia_danh = d.Ma_dia_danh
+      LEFT JOIN Lich_khoi_hanh lkh ON t.Ma_tour = lkh.Ma_tour
+      LEFT JOIN Chi_tiet_booking cb ON lkh.Ma_lich = cb.Ma_lich
+      LEFT JOIN Booking b ON cb.Ma_booking = b.Ma_booking AND b.Trang_thai_booking = 'Đã thanh toán'
+      LEFT JOIN Khuyen_mai km ON b.Ma_khuyen_mai = km.Ma_km
     `;
     let conditions = [];
     let params = [];
@@ -67,8 +131,9 @@ static async getAllTours(req, res) {
     if (conditions.length > 0) {
       sql += ' WHERE ' + conditions.join(' AND ');
     }
-    
-    // Pagination: mặc định 12 tour mỗi page
+
+    // Thêm GROUP BY vì có aggregate function
+    sql += ' GROUP BY t.Ma_tour';
     const perPage = limit ? parseInt(limit) : 12;
     const currentPage = page ? parseInt(page) : 1;
     const offset = (currentPage - 1) * perPage;
