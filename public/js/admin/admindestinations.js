@@ -62,33 +62,34 @@ async function loadDestinations() {
         destinationsList.innerHTML = '';
         
         destinations.forEach(destination => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${destination.Ma_dia_danh}</td>
-                <td>${destination.Ten_dia_danh}</td>
-                <td>${destination.Mo_ta ? destination.Mo_ta.substring(0, 100) + '...' : 'Không có mô tả'}</td>
-                <td>
-                    <img src="${destination.Hinh_anh || '/images/placeholder.jpg'}" 
-                         alt="${destination.Ten_dia_danh}" 
-                         class="img-thumbnail" style="width: 100px; height: 70px; object-fit: cover;"
-                         onerror="this.src='/images/placeholder.jpg'">
-                </td>
-                <td>
-                    <button class="btn btn-sm btn-info btn-view-destination" data-id="${destination.Ma_dia_danh}">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn btn-sm btn-primary btn-edit-destination" data-id="${destination.Ma_dia_danh}">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-danger btn-delete-destination" data-id="${destination.Ma_dia_danh}">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                    <button class="btn btn-sm btn-success btn-manage-tour-destination" data-id="${destination.Ma_dia_danh}" data-name="${destination.Ten_dia_danh}">
-                        <i class="fas fa-link"></i> Chọn cho tour
-                    </button>
-                </td>
+            // Tạo card HTML thay vì table row
+            const card = document.createElement('div');
+            card.className = 'destination-card';
+            card.innerHTML = `
+                <img src="${destination.Hinh_anh || '/images/placeholder.jpg'}" 
+                     alt="${destination.Ten_dia_danh}" 
+                     class="destination-image"
+                     onerror="this.src='/images/placeholder.jpg'">
+                <div class="destination-info">
+                    <h5>${destination.Ten_dia_danh}</h5>
+                    <p>${destination.Mo_ta ? destination.Mo_ta.substring(0, 150) + '...' : 'Không có mô tả'}</p>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto;">
+                        <button class="btn btn-sm btn-info btn-view-destination" data-id="${destination.Ma_dia_danh}" title="Xem chi tiết">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-primary btn-edit-destination" data-id="${destination.Ma_dia_danh}" title="Chỉnh sửa">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger btn-delete-destination" data-id="${destination.Ma_dia_danh}" title="Xóa">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <button class="btn btn-sm btn-success btn-manage-tour-destination" data-id="${destination.Ma_dia_danh}" data-name="${destination.Ten_dia_danh}" title="Chọn cho tour">
+                            <i class="fas fa-link"></i>
+                        </button>
+                    </div>
+                </div>
             `;
-            destinationsList.appendChild(row);
+            destinationsList.appendChild(card);
         });
         
         // Show the tour destinations container
@@ -793,6 +794,47 @@ async function viewDestination(destinationId) {
         
         const data = await response.json();
         const destination = data.data.destination;
+        const tours = data.data.tours || [];
+        
+        // Tạo HTML cho danh sách tour
+        let toursHtml = '';
+        if (tours.length > 0) {
+            toursHtml = `
+                <div class="mt-4">
+                    <h6 class="mb-3"><strong>Tour có chứa điểm đến này (${tours.length}):</strong></h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mã Tour</th>
+                                    <th>Tên Tour</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tours.map(tour => `
+                                    <tr>
+                                        <td>${tour.Ma_tour}</td>
+                                        <td>${tour.Ten_tour || 'Chưa có'}</td>
+                                        <td>
+                                            <span class="badge ${tour.Tinh_trang === 'Hoạt động' ? 'bg-success' : 'bg-danger'}">
+                                                ${tour.Tinh_trang || 'Chưa xác định'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        } else {
+            toursHtml = `
+                <div class="mt-4">
+                    <p class="text-muted"><em>Chưa có tour nào có chứa điểm đến này</em></p>
+                </div>
+            `;
+        }
         
         // Tạo modal xem chi tiết
         const modalHtml = `
@@ -815,10 +857,11 @@ async function viewDestination(destinationId) {
                                 </div>
                                 <div class="col-md-6">
                                     ${destination.Hinh_anh ? 
-                                        `<img src="${destination.Hinh_anh}" class="img-fluid rounded" alt="${destination.Ten_dia_danh}">` : 
+                                        `<img src="${destination.Hinh_anh}" class="img-fluid rounded" alt="${destination.Ten_dia_danh}" onerror="this.src='/images/placeholder.jpg'">` : 
                                         '<p class="text-muted">Không có hình ảnh</p>'}
                                 </div>
                             </div>
+                            ${toursHtml}
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>

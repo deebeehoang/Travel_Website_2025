@@ -156,6 +156,22 @@ class Destination {
    * @returns {boolean} - Success status
    */
   static async addDestinationToTour(tourId, destinationId, order) {
+    // First check if destination already exists in this tour
+    const [existing] = await pool.query(
+      'SELECT Ma_tour FROM chi_tiet_tour_dia_danh WHERE Ma_tour = ? AND Ma_dia_danh = ?',
+      [tourId, destinationId]
+    );
+    
+    if (existing.length > 0) {
+      // If already exists, update the order
+      const [result] = await pool.query(
+        'UPDATE chi_tiet_tour_dia_danh SET Thu_tu = ? WHERE Ma_tour = ? AND Ma_dia_danh = ?',
+        [order, tourId, destinationId]
+      );
+      return result.affectedRows > 0;
+    }
+    
+    // If not exists, insert new record
     const [result] = await pool.query(
       'INSERT INTO chi_tiet_tour_dia_danh (Ma_tour, Ma_dia_danh, Thu_tu) VALUES (?, ?, ?)',
       [tourId, destinationId, order]

@@ -543,6 +543,7 @@ body.messages-active .admin-chat-container {
 .main-content:has(#messagesSection.active) .chat-sidebar,
 #messagesSection.active .chat-sidebar {
     margin-left: 0 !important;
+    margin-right: 0 !important;
 }
 
 /* Đảm bảo không có gap giữa sidebar admin và messages section - Fallback cho trình duyệt không hỗ trợ :has() */
@@ -1680,14 +1681,15 @@ button.btn.btn-sm.btn-secondary:hover {
   flex: 1;
   overflow: hidden;
   height: calc(100vh - 80px);
-  background: #f5f6fa;
+  background: #ffffff;
+  gap: 0;
 }
 
 /* ========== SIDEBAR: DANH SÁCH NGƯỜI DÙNG ========== */
 .chat-sidebar {
   width: 350px;
   background: #ffffff;
-  border-right: 1px solid #e9ecef;
+  border-right: none;
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
@@ -1696,7 +1698,7 @@ button.btn.btn-sm.btn-secondary:hover {
   margin: 0 !important;
   margin-left: 0 !important;
   margin-right: 0 !important;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 
 .chat-sidebar.collapsed {
@@ -2006,7 +2008,7 @@ button.btn.btn-sm.btn-secondary:hover {
   flex-direction: column;
   background: #fff;
   min-width: 0;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
   position: relative;
 }
 
@@ -2549,7 +2551,7 @@ button.btn.btn-sm.btn-secondary:hover {
     width: 100%;
     max-height: 300px;
     border-right: none;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: none;
   }
   
   .chat-sidebar.collapsed {
@@ -2850,3 +2852,56 @@ body.messages-active .main-content > .content-wrapper > #messagesSection {
     width: 100% !important;
 }
 
+/* Alias for destinations grid */
+.destinations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+    margin-bottom: 30px;
+}
+
+.destination-card {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
+}
+
+.destination-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.destination-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background-color: #f0f0f0;
+}
+
+.destination-info {
+    padding: 15px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.destination-info h5 {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.destination-info p {
+    margin: 0 0 15px 0;
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.4;
+    flex-grow: 1;
+}

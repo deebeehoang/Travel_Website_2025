@@ -144,7 +144,19 @@ static async getAll(filters = {}) {
   static async getByCustomerId(customerId) {
     const bookingTableName = await Booking.getBookingTableName();
     const [rows] = await pool.query(
-      `SELECT * FROM \`${bookingTableName}\` WHERE Ma_khach_hang = ? ORDER BY Ngay_dat DESC`,
+      `SELECT 
+        b.*,
+        t.Ten_tour,
+        t.map_address as Diem_den,
+        l.Ngay_bat_dau,
+        l.Ngay_ket_thuc,
+        l.Ma_lich
+       FROM \`${bookingTableName}\` b
+       LEFT JOIN Chi_tiet_booking cb ON b.Ma_booking = cb.Ma_booking
+       LEFT JOIN Lich_khoi_hanh l ON cb.Ma_lich = l.Ma_lich
+       LEFT JOIN Tour_du_lich t ON l.Ma_tour = t.Ma_tour
+       WHERE b.Ma_khach_hang = ? 
+       ORDER BY b.Ngay_dat DESC`,
       [customerId]
     );
     

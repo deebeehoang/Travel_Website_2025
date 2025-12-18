@@ -53,34 +53,25 @@ function loadUserBookings() {
             // Hiển thị thông báo không có booking
             document.getElementById('no-bookings').classList.remove('d-none');
         } else {
-            // Tải thông tin tour cho mỗi booking
+            // Backend đã trả về thông tin tour đầy đủ bao gồm Ten_tour, Diem_den, Ngay_bat_dau, Ngay_ket_thuc
+            // Nên không cần lấy thêm thông tin tour từ API riêng biệt
             const bookings = data.data.bookings;
-            const tourPromises = bookings.map(booking => {
-                if (booking.Ma_tour) {
-                    return fetch(`${API_URL}/tours/${booking.Ma_tour}`)
-                        .then(response => response.ok ? response.json() : null)
-                        .then(tourData => {
-                            if (tourData && tourData.data && tourData.data.tour) {
-                                booking.Ten_tour = tourData.data.tour.Ten_tour;
-                                booking.Diem_den = tourData.data.tour.Diem_den;
-                            }
-                            return booking;
-                        })
-                        .catch(error => {
-                            console.error(`Lỗi khi tải thông tin tour ${booking.Ma_tour}:`, error);
-                            return booking;
-                        });
-                } else {
-                    return Promise.resolve(booking);
-                }
+            
+            // Log để kiểm tra dữ liệu được nhận từ backend
+            console.log('📊 Kiểm tra dữ liệu từ backend:');
+            bookings.forEach(booking => {
+                console.log(`Booking ${booking.Ma_booking}:`, {
+                    Ten_tour: booking.Ten_tour,
+                    Diem_den: booking.Diem_den,
+                    Ngay_bat_dau: booking.Ngay_bat_dau,
+                    Ngay_ket_thuc: booking.Ngay_ket_thuc,
+                    Ma_lich: booking.Ma_lich
+                });
             });
             
-            Promise.all(tourPromises)
-                .then(updatedBookings => {
-                    // Hiển thị danh sách booking với thông tin tour đầy đủ
-                    displayBookings(updatedBookings);
-                    document.getElementById('bookings-container').classList.remove('d-none');
-                });
+            // Hiển thị danh sách booking với thông tin từ backend
+            displayBookings(bookings);
+            document.getElementById('bookings-container').classList.remove('d-none');
         }
     })
     .catch(error => {
@@ -123,7 +114,17 @@ function displayBookings(bookings) {
     const container = document.getElementById('bookings-container');
     container.innerHTML = '';
     
-    bookings.forEach(booking => {
+    console.log('📊 [displayBookings] Bắt đầu hiển thị', bookings.length, 'bookings');
+    
+    bookings.forEach((booking, index) => {
+        console.log(`🔍 Booking ${index}:`, {
+            Ma_booking: booking.Ma_booking,
+            Ngay_bat_dau: booking.Ngay_bat_dau,
+            Ngay_ket_thuc: booking.Ngay_ket_thuc,
+            Ten_tour: booking.Ten_tour,
+            map_address: booking.map_address
+        });
+        
         // Format ngày
         const bookingDate = new Date(booking.Ngay_dat).toLocaleDateString('vi-VN');
         const tourStartDate = booking.Ngay_bat_dau ? new Date(booking.Ngay_bat_dau).toLocaleDateString('vi-VN') : 'N/A';

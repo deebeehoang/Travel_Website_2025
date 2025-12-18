@@ -104,6 +104,14 @@ class BookingController {
       // Assuming we have customer ID in request after authentication middleware
       const customerId = req.user.customerId;
       
+      const fs = require('fs');
+      const logMsg = `[${new Date().toISOString()}] getUserBookings - Customer: ${customerId}, Bookings count: ?`;
+      fs.appendFileSync('debug-bookings.log', logMsg + '\n');
+      
+      console.log('📍 [getUserBookings] Request nhận được:');
+      console.log(`   - Customer ID: ${customerId}`);
+      console.log(`   - User details: ${JSON.stringify(req.user)}`);
+      
       if (!customerId) {
         return res.status(400).json({
           status: 'error',
@@ -112,6 +120,16 @@ class BookingController {
       }
       
       const bookings = await Booking.getByCustomerId(customerId);
+      
+      console.log(`📍 [getUserBookings] Trả về ${bookings.length} bookings`);
+      if (bookings.length > 0) {
+        console.log(`📍 [getUserBookings] Sample booking:`, {
+          Ma_booking: bookings[0].Ma_booking,
+          Ngay_bat_dau: bookings[0].Ngay_bat_dau,
+          Ten_tour: bookings[0].Ten_tour,
+          map_address: bookings[0].map_address
+        });
+      }
       
       res.status(200).json({
         status: 'success',

@@ -296,31 +296,18 @@
 
                             <!-- Thêm phần biểu đồ doanh thu -->
                             <div class="row mt-4">
-                                <!-- Biểu đồ doanh thu theo tháng -->
-                                <div class="col-xl-6">
+                                <!-- Biểu đồ doanh thu theo tháng (Full width) -->
+                                <div class="col-xl-12">
                                     <div class="card mb-4">
                                         <div class="card-header">
                                             <i class="fas fa-chart-bar me-1"></i>
-                                            Doanh thu theo tháng
+                                            Doanh thu theo tháng năm 
                                             <select id="yearSelect" class="form-select form-select-sm float-end" style="width: auto;">
                                                 <!-- Sẽ được điền bởi JavaScript -->
                                             </select>
                                         </div>
                                         <div class="card-body">
                                             <canvas id="monthlyRevenueChart"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Biểu đồ doanh thu theo năm -->
-                                <div class="col-xl-6">
-                                    <div class="card mb-4">
-                                        <div class="card-header">
-                                            <i class="fas fa-chart-bar me-1"></i>
-                                            Doanh thu theo năm
-                                        </div>
-                                        <div class="card-body">
-                                            <canvas id="yearlyRevenueChart"></canvas>
                                         </div>
                                     </div>
                                 </div>
@@ -1432,69 +1419,56 @@
                         <!-- Destinations Section -->
                       <!-- PHẦN CẬP NHẬT BỐ CỤC QUẢN LÝ ĐIỂM ĐẾN -->
 <div id="destinationsSection" class="content-section">
-    <div class="section-header d-flex justify-content-between align-items-center mb-3">
-      <h3>Quản lý Điểm đến</h3>
-      <button class="btn btn-success" id="addDestinationBtn">
-        <i class="fas fa-plus"></i> Thêm Điểm đến mới
-      </button>
-    </div>
-  
-    <div class="mb-3">
-      <input type="text" id="destinationSearchInput" class="form-control" placeholder="Tìm kiếm điểm đến...">
-    </div>
-  
-    <div id="destinationsList" class="row g-3">
-      <!-- Các điểm đến sẽ được render tại đây bằng JavaScript dạng card -->
-    </div>
-  
-    <div id="tourDestinationsContainer" class="mt-5" style="display: none">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4>Chi tiết điểm đến cho tour</h4>
-        <div class="d-flex gap-2">
-          <select id="tourSelect" class="form-select">
-            <option value="">Chọn Tour</option>
-          </select>
-          <button class="btn btn-success" id="addTourDestinationBtn" disabled>
-            <i class="fas fa-plus"></i> Thêm điểm đến cho tour
-          </button>
+    <div class="section-header">
+        <h3>Quản lý Điểm đến</h3>
+        <div class="section-actions">
+            <button class="btn btn-refresh" id="refreshDestinationsBtn">
+                <i class="fas fa-sync"></i> Tải lại dữ liệu
+            </button>
+            <button class="btn btn-add" id="addDestinationBtn">
+                <i class="fas fa-plus"></i> Thêm Điểm đến mới
+            </button>
         </div>
-      </div>
-      <div class="table-responsive">
-        <table class="table table-striped">
-          <thead class="table-dark">
-            <tr>
-              <th>Mã điểm đến</th>
-              <th>Tên điểm đến</th>
-              <th>Thứ tự</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody id="tourDestinationsList">
-            <!-- Nội dung động -->
-          </tbody>
-        </table>
-      </div>
     </div>
-  </div>
-  
-  <style>
-  #destinationsList .card {
-    border-radius: 12px;
-    box-shadow: 0 0 8px rgba(0,0,0,0.1);
-    transition: transform 0.2s;
-  }
-  #destinationsList .card:hover {
-    transform: scale(1.02);
-  }
-  #destinationsList .card img {
-    max-height: 140px;
-    object-fit: cover;
-    border-radius: 10px;
-  }
-  #destinationsList .btn-group .btn {
-    font-size: 0.8rem;
-  }
-  </style>
+
+    <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="destinationSearchInput" class="form-control" placeholder="Tìm kiếm điểm đến...">
+    </div>
+
+    <div id="destinationsList" class="destinations-grid">
+        <!-- Các điểm đến sẽ được render tại đây bằng JavaScript dạng card -->
+    </div>
+
+    <div id="tourDestinationsContainer" class="mt-5" style="display: none">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4>Chi tiết điểm đến cho tour</h4>
+            <div class="d-flex gap-2">
+                <select id="tourSelect" class="form-select">
+                    <option value="">Chọn Tour</option>
+                </select>
+                <button class="btn btn-success" id="addTourDestinationBtn" disabled>
+                    <i class="fas fa-plus"></i> Thêm điểm đến cho tour
+                </button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Mã điểm đến</th>
+                        <th>Tên điểm đến</th>
+                        <th>Thứ tự</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="tourDestinationsList">
+                    <!-- Nội dung động -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
                         <!-- Services Section -->
                         <div id="servicesSection" class="content-section">
                             <div class="section-header d-flex justify-content-between align-items-center mb-3">
