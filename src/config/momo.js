@@ -3,29 +3,18 @@
  */
 
 const MOMO_CONFIG = {
-    // Test environment credentials
-    PARTNER_CODE: "MOMO",
-    ACCESS_KEY: "F8BBA842ECF85",
-    SECRET_KEY: "K951B6PE1waDMi640xX08PD3vg6EkVlz",
-    
-    // Production environment credentials (uncomment when ready for production)
-    // PARTNER_CODE: "YOUR_PRODUCTION_PARTNER_CODE",
-    // ACCESS_KEY: "YOUR_PRODUCTION_ACCESS_KEY", 
-    // SECRET_KEY: "YOUR_PRODUCTION_SECRET_KEY",
+    PARTNER_CODE: process.env.MOMO_PARTNER_CODE || "MOMO",
+    ACCESS_KEY: process.env.MOMO_ACCESS_KEY || "",
+    SECRET_KEY: process.env.MOMO_SECRET_KEY || "",
     
     // API endpoints
-    CREATE_PAYMENT_URL: "https://test-payment.momo.vn/v2/gateway/api/create",
-    QUERY_PAYMENT_URL: "https://test-payment.momo.vn/v2/gateway/api/query",
-    REFUND_PAYMENT_URL: "https://test-payment.momo.vn/v2/gateway/api/refund",
-    
-    // Production endpoints (uncomment when ready for production)
-    // CREATE_PAYMENT_URL: "https://payment.momo.vn/v2/gateway/api/create",
-    // QUERY_PAYMENT_URL: "https://payment.momo.vn/v2/gateway/api/query", 
-    // REFUND_PAYMENT_URL: "https://payment.momo.vn/v2/gateway/api/refund",
+    CREATE_PAYMENT_URL: `${process.env.MOMO_API_URL || "https://test-payment.momo.vn/v2/gateway/api"}/create`,
+    QUERY_PAYMENT_URL: `${process.env.MOMO_API_URL || "https://test-payment.momo.vn/v2/gateway/api"}/query`,
+    REFUND_PAYMENT_URL: `${process.env.MOMO_API_URL || "https://test-payment.momo.vn/v2/gateway/api"}/refund`,
     
     // Callback URLs
-    REDIRECT_URL: "https://276404fabdd3.ngrok-free.app/payment/momo/return",
-    IPN_URL: "https://276404fabdd3.ngrok-free.app/api/payment/momo/ipn",
+    REDIRECT_URL: process.env.MOMO_REDIRECT_URL || "",
+    IPN_URL: process.env.MOMO_IPN_URL || "",
     
     // Request type
     REQUEST_TYPE: "captureWallet",
